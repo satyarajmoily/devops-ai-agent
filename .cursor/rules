@@ -1,0 +1,297 @@
+# Market Programmer Agent - Cursor Project Intelligence
+
+## Project Overview
+LangChain-powered autonomous agent that monitors market-predictor service and autonomously implements improvements through code generation, testing, and GitHub PRs. This is the brain of the autonomous trading system.
+
+## Core Development Patterns
+
+### 1. Autonomous Agent Architecture
+- Separate FastAPI web service from autonomous agent core
+- LangChain framework for AI agent orchestration
+- Clean separation: Monitor → Analyze → Act → Learn
+- Safety-first approach with validation before any actions
+- Human oversight capabilities for complex decisions
+
+### 2. LangChain Integration Patterns
+- Use structured prompt templates for consistency
+- Implement proper memory management for context
+- Validate all LLM inputs and outputs
+- Handle LLM API failures gracefully with fallbacks
+- Cost monitoring and rate limiting for LLM usage
+
+### 3. External Service Integration
+- HTTP clients for all external services (predictor, Prometheus, GitHub)
+- Circuit breaker pattern for resilience
+- Retry logic with exponential backoff
+- Graceful degradation when services unavailable
+- Comprehensive error handling and logging
+
+### 4. Safety and Validation Framework
+- All AI-generated actions must pass local testing
+- Sandbox isolation for testing changes
+- Human escalation for complex decisions
+- Rollback capability for problematic changes
+- Audit trail of all autonomous actions
+
+## AI/LLM Development Patterns
+
+### 1. LangChain Agent Design
+```python
+class AnalysisAgent:
+    def __init__(self, llm: LLM, tools: List[Tool]):
+        self.agent = initialize_agent(
+            tools=tools,
+            llm=llm,
+            agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION
+        )
+    
+    async def analyze_issue(self, context: Dict) -> AnalysisResult:
+        prompt = self.build_analysis_prompt(context)
+        result = await self.agent.arun(prompt)
+        return AnalysisResult.parse(result)
+```
+
+### 2. Prompt Engineering Standards
+- Use structured templates with clear instructions
+- Include examples and expected output format
+- Implement prompt versioning and testing
+- Validate prompt outputs with Pydantic models
+- Regular prompt optimization based on results
+
+### 3. LLM Response Handling
+- Always parse LLM responses with structured models
+- Implement validation for all AI outputs
+- Handle parsing errors gracefully
+- Log all LLM interactions for analysis
+- Implement response caching for efficiency
+
+### 4. AI Safety Measures
+- Input sanitization to prevent prompt injection
+- Output validation to ensure safe actions
+- Human approval workflows for significant changes
+- Comprehensive testing before any deployment
+- Learning from failure modes and edge cases
+
+## Monitoring and Analysis Patterns
+
+### 1. Multi-Source Data Integration
+- Prometheus metrics for quantitative analysis
+- Loki logs for qualitative insights
+- Direct HTTP health checks for real-time status
+- Combine data sources for comprehensive analysis
+- Handle data source failures independently
+
+### 2. Issue Detection and Classification
+```python
+class IssueClassifier:
+    def classify_issue(self, metrics: Dict, logs: List[str]) -> IssueType:
+        # Combine quantitative and qualitative analysis
+        severity = self.assess_severity(metrics)
+        category = self.categorize_issue(logs)
+        return IssueType(severity=severity, category=category)
+```
+
+### 3. Performance Analysis
+- Track trends over time, not just point-in-time metrics
+- Identify anomalies and deviations from normal patterns
+- Correlate different metrics to find root causes
+- Use statistical analysis for trend detection
+- Implement baseline comparison for deviation detection
+
+## Code Quality and Testing Standards
+
+### 1. Type Safety with AI Components
+- Type hints for all functions and classes
+- Pydantic models for all data structures
+- Special handling for LLM interfaces (Optional types)
+- Mock LLM responses for deterministic testing
+- Avoid `Any` types except for LangChain interfaces
+
+### 2. Testing Autonomous Components
+```python
+# Mock LLM responses for testing
+@pytest.fixture
+def mock_llm_response():
+    return {
+        "root_cause": "High memory usage",
+        "severity": "medium",
+        "recommended_actions": ["restart_service"],
+        "risk_assessment": "low"
+    }
+
+def test_analysis_agent(mock_llm_response):
+    # Test agent logic without expensive LLM calls
+    pass
+```
+
+### 3. Integration Testing Strategy
+- Test each external service integration separately
+- Mock LLM responses for deterministic behavior
+- Test error handling and fallback mechanisms
+- Validate safety measures and validation logic
+- End-to-end testing with controlled scenarios
+
+## Configuration and Security
+
+### 1. Secrets Management
+- Environment variables for all API keys
+- Secure storage and rotation of credentials
+- No secrets in code or logs
+- Principle of least privilege for API access
+- Audit logging for all credential usage
+
+### 2. LLM Configuration
+```python
+class LLMSettings(BaseSettings):
+    openai_api_key: Optional[str] = None
+    llm_provider: str = "openai"
+    llm_model: str = "gpt-4"
+    llm_temperature: float = 0.1
+    llm_max_tokens: int = 4000
+    cost_limit_per_day: float = 10.0
+```
+
+### 3. Agent Behavior Configuration
+- Monitoring interval configuration
+- Action validation thresholds
+- Human escalation triggers
+- Learning rate and adaptation settings
+- Safety override mechanisms
+
+## Performance and Cost Management
+
+### 1. LLM Cost Optimization
+- Cache LLM responses when appropriate
+- Use smaller models for simple tasks
+- Implement token counting and limits
+- Monitor daily/monthly API costs
+- Fallback to rule-based logic when cost limits reached
+
+### 2. Monitoring Loop Efficiency
+- Configurable monitoring intervals
+- Smart polling based on system health
+- Batch processing for multiple issues
+- Efficient data collection and storage
+- Resource usage monitoring and optimization
+
+### 3. Background Task Management
+```python
+class BackgroundTaskManager:
+    def __init__(self):
+        self.tasks = set()
+    
+    def create_task(self, coro):
+        task = asyncio.create_task(coro)
+        self.tasks.add(task)
+        task.add_done_callback(self.tasks.discard)
+        return task
+```
+
+## Common Patterns and Solutions
+
+### 1. Agent Orchestration
+```python
+class AutonomousAgent:
+    async def run_cycle(self):
+        observations = await self.collect_observations()
+        analysis = await self.analyze_observations(observations)
+        actions = await self.plan_actions(analysis)
+        results = await self.execute_actions(actions)
+        await self.learn_from_results(results)
+```
+
+### 2. Safe Action Execution
+```python
+class ActionValidator:
+    async def validate_action(self, action: Action) -> ValidationResult:
+        test_env = await self.create_isolated_env()
+        try:
+            await test_env.apply_action(action)
+            results = await test_env.run_tests()
+            return ValidationResult(
+                success=results.all_passed(),
+                safe_to_deploy=results.meets_safety_criteria()
+            )
+        finally:
+            await test_env.cleanup()
+```
+
+### 3. Learning and Adaptation
+```python
+class LearningSystem:
+    def track_outcome(self, action: Action, result: ActionResult):
+        self.outcome_history.append(ActionOutcome(action, result))
+        self.update_strategy_based_on_outcome(action, result)
+        self.adjust_confidence_scores(action.type, result.success)
+```
+
+## Agent-Specific Anti-Patterns
+
+### 1. LLM Anti-Patterns
+- Don't trust LLM responses without validation
+- Avoid open-ended prompts without structure
+- Don't ignore rate limits and cost controls
+- Avoid storing sensitive data in LLM context
+- Don't implement AI without human oversight
+
+### 2. Autonomous System Pitfalls
+- Avoid making changes without testing
+- Don't escalate issues unnecessarily
+- Avoid creating feedback loops that amplify problems
+- Don't ignore human override signals
+- Avoid learning from biased or incomplete data
+
+### 3. Monitoring Mistakes
+- Don't rely on single data sources
+- Avoid alert fatigue with too many notifications
+- Don't ignore correlation vs. causation
+- Avoid making decisions on insufficient data
+- Don't forget to monitor the monitor (agent health)
+
+## Development Workflow for AI Systems
+
+### 1. AI Development Cycle
+- Design prompts in Jupyter notebooks
+- Test with mock responses before real LLM calls
+- Validate outputs with structured models
+- Iterate based on real-world performance
+- Monitor and optimize continuously
+
+### 2. Safety-First Development
+- Start with read-only monitoring
+- Gradually add low-risk actions
+- Implement comprehensive testing
+- Human oversight for all changes
+- Rollback plans for every feature
+
+### 3. Continuous Learning
+- Track all agent decisions and outcomes
+- Analyze failure modes and edge cases
+- Update prompts based on real usage
+- Adjust agent behavior based on feedback
+- Document lessons learned
+
+## Future Evolution Guidelines
+
+### 1. Advanced AI Capabilities
+- Multi-model orchestration for different tasks
+- Fine-tuned models for specific use cases
+- Vector databases for knowledge management
+- Reinforcement learning from outcomes
+- Advanced reasoning and planning
+
+### 2. Scaling Autonomous Operations
+- Multi-service monitoring capabilities
+- Distributed agent coordination
+- Advanced conflict resolution
+- Predictive issue detection
+- Self-optimization and meta-learning
+
+### 3. Integration Expansion
+- Support for multiple programming languages
+- Integration with more external services
+- Advanced code review and testing
+- Automated documentation generation
+- Cross-system optimization
+
+This autonomous agent is designed to be safe, effective, and continuously improving while maintaining human oversight and control. 
