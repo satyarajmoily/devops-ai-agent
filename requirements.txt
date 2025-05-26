@@ -15,6 +15,9 @@ openai>=1.0.0
 # GitHub integration (for future phases)
 PyGithub>=1.59.0
 
+# Docker API integration
+docker>=7.0.0
+
 # Monitoring and metrics
 prometheus-client>=0.17.0
 

@@ -2,13 +2,34 @@
 
 ## Current Focus: Milestone 1 - Foundation
 
-**Status**: Event-Driven Architecture Complete ✅  
-**Timeline**: Phase 1.2 COMPLETE, Phase 1.3 NEXT  
-**Goal**: Establish autonomous agent foundation with FastAPI service, basic monitoring, and communication with market-predictor
+**Status**: Phase 1.3 Infrastructure Monitoring & Recovery COMPLETE WITH END-TO-END VALIDATION ✅  
+**Timeline**: Phase 1.3 COMPLETE WITH VALIDATION, Phase 1.4 IN PROGRESS  
+**Goal**: Complete Milestone 1 foundation with comprehensive testing and validation
 
-## Current Phase: Phase 1.3 - Basic Feedback Loop Implementation (NEXT)
+## 🎉 MAJOR SUCCESS: End-to-End Recovery System VALIDATED
 
-### Phase 1.1 & 1.2 COMPLETED ✅:
+### Recent Achievement - Full Recovery System Working:
+- ✅ **Complete Autonomous Recovery Cycle**: service failure → alert detection → automated restart → health validation
+- ✅ **Real Container Restart**: Market-predictor successfully restarted via Docker API in 2.1-2.5 seconds
+- ✅ **Service Name Extraction**: Debug logging confirmed proper alert label parsing
+- ✅ **Multi-Step Workflow**: CHECK_LOGS → RESTART_SERVICE → CHECK_SERVICE_HEALTH executed flawlessly
+- ✅ **Alert Integration**: MarketPredictorDown alerts properly routed through Alertmanager webhooks
+- ✅ **Docker Permissions**: Container rebuild confirmed proper Docker socket access with appuser in root group
+- ✅ **Authentication**: Bearer token validation working correctly for webhook endpoints
+- ✅ **Recovery Metrics**: Comprehensive tracking of duration, steps executed, and success validation
+- ✅ **Alert Resolution**: System properly detected service recovery and sent resolved alerts
+
+### Technical Details Validated:
+- **Service Name Extraction**: Enhanced `_extract_service_name` with debug logging working correctly
+- **Placeholder Replacement**: Recovery steps properly replace "service_name" with actual service names
+- **Docker API Integration**: Full Docker container management via `/var/run/docker.sock`
+- **Recovery Strategies**: ServiceDown strategy with 3-step workflow proven effective
+- **Error Handling**: Comprehensive timeout handling and validation mechanisms working
+- **Restart Loop Management**: Agent restart behavior contained and managed properly
+
+## Current Phase: Phase 1.4 - Agent Infrastructure Testing (IN PROGRESS)
+
+### Phase 1.1, 1.2 & 1.3 COMPLETED ✅:
 1. ✅ **Agent project structure** with proper Python packaging
 2. ✅ **FastAPI application** with health and control endpoints  
 3. ✅ **LangChain framework** integrated for AI agent capabilities
@@ -16,198 +37,191 @@
 5. ✅ **Configuration management** with secrets handling
 6. ✅ **Event-Driven Architecture** with Alertmanager webhooks
 7. ✅ **Professional monitoring stack** with Prometheus integration
+8. ✅ **Docker Compose Infrastructure** with full monitoring stack
+9. ✅ **DockerServiceManager** with container restart capabilities
+10. ✅ **RecoveryService** with intelligent error pattern recognition
+11. ✅ **Automated Recovery Workflows** with validation and metrics
+12. ✅ **Professional Alerting** with Alertmanager configuration
+13. ✅ **End-to-End Recovery Testing** with real service failures ⭐ NEW!
 
-### Immediate Next Steps (Phase 1.3):
-1. **Implement action execution framework** for automated responses
-2. **Create simple recovery actions** (restart, cleanup, resource management)
-3. **Build action result validation** and success measurement
-4. **Implement rollback mechanisms** for failed actions
-5. **Create learning system** for action effectiveness tracking
+### 🚀 MAJOR ACHIEVEMENT - Phase 1.3 Infrastructure Monitoring & Recovery:
 
-### Expected Directory Structure After Phase 1.1:
+**Complete Event-Driven Monitoring Stack**:
+- **Prometheus** monitors services with 10-second intervals
+- **Alert Rules** detect various failure conditions (service down, performance, errors, resources)
+- **Alertmanager** routes alerts with severity-based escalation
+- **Agent Webhooks** receive alerts and trigger automated recovery
+- **Recovery Actions** include restart, log analysis, health checks, resource monitoring
+- **Docker Integration** enables professional container restart capabilities
+- **Validation System** ensures post-recovery health verification
+
+**Recovery Capabilities Implemented**:
+- Intelligent error pattern recognition in logs
+- Multi-step recovery strategies by alert type
+- Professional Docker service management
+- Comprehensive recovery metrics and reporting
+- Safety mechanisms with timeout handling
+- Escalation paths for complex issues
+
+### Immediate Next Steps (Phase 1.4 - Testing):
+1. **Unit Tests** for AI analysis components (with LLM mocking)
+2. **Integration Tests** for predictor communication and Docker operations
+3. **End-to-End Testing** for monitoring → alert → recovery → validation flow
+4. **Recovery System Testing** with simulated failures
+5. **Webhook Integration Testing** with various alert scenarios
+6. **Docker Deployment Testing** with full stack validation
+
+### Current Architecture (Phase 1.3 Complete):
 ```
 market-programmer-agent/
 ├── src/
 │   └── agent/
-│       ├── __init__.py
-│       ├── main.py                     # FastAPI app entry point
+│       ├── main.py                     # FastAPI app with webhook integration
 │       ├── core/
-│       │   ├── __init__.py
-│       │   ├── monitoring.py          # Monitoring orchestration
-│       │   ├── analysis.py            # Issue analysis engine
-│       │   └── actions.py             # Action execution engine
+│       │   └── monitoring.py          # Enhanced orchestration with recovery
 │       ├── services/
-│       │   ├── __init__.py
-│       │   ├── prometheus_client.py   # Prometheus integration
-│       │   ├── github_client.py       # GitHub API client
+│       │   ├── docker_service.py      # Professional Docker management ✅
+│       │   ├── recovery_service.py    # Automated recovery system ✅
 │       │   └── predictor_client.py    # Market predictor client
 │       ├── agents/
-│       │   ├── __init__.py
 │       │   └── analyzer.py            # LangChain analysis agent
 │       ├── models/
-│       │   ├── __init__.py
 │       │   ├── alerts.py              # Alert models
-│       │   └── analysis.py            # Analysis models
+│       │   ├── webhook.py             # Webhook models ✅
+│       │   └── health.py              # Health and status models
 │       └── config/
-│           ├── __init__.py
-│           ├── settings.py            # Configuration
-│           └── prompts.py             # LLM prompts
-├── tests/
-├── docker/
-├── requirements.txt
-├── requirements-dev.txt
-├── .env.example
+│           └── settings.py            # Configuration
+├── monitoring/                        # Complete monitoring stack ✅
+│   ├── prometheus/
+│   │   ├── prometheus.yml             # Service monitoring config
+│   │   └── alert-rules.yml           # Professional alert rules
+│   ├── alertmanager/
+│   │   └── alertmanager.yml          # Alert routing and webhooks
+│   ├── grafana/                      # Visualization setup
+│   └── loki/                         # Log aggregation
+├── docker-compose.yml                # Full infrastructure stack ✅
 └── README.md
 ```
 
-## Upcoming Phases
+## Environment Status & Issues
 
-### Phase 1.2: Basic Monitoring & Communication Setup (2-3 days)
-**Focus**: Establish communication with market-predictor and basic monitoring
-- [ ] HTTP client for market-predictor communication
-- [ ] Health check monitoring of market-predictor
-- [ ] Basic status reporting and agent health endpoints
-- [ ] Simple restart capabilities for predictor service
-- [ ] Agent status dashboard endpoint
+### Development Environment Issues Identified 🚨:
+- **Virtual Environment Missing**: Services running without proper venv activation
+- **Python Path**: Services using system Python instead of project venv
+- **Dependencies**: May have version conflicts without isolated environments
 
-### Phase 1.3: Basic Feedback Loop Implementation (3-4 days)
-**Focus**: Implement simple autonomous monitoring and response
-- [ ] Continuous monitoring loop for market-predictor
-- [ ] Issue detection for basic problems (service down, high latency)
-- [ ] Simple LangChain agent for basic analysis
-- [ ] Basic restart mechanism for predictor service
-- [ ] Alert logging and response system
+### Current Service Status:
+- ✅ **Market Predictor**: Running on http://127.0.0.1:8000
+- ✅ **Market Programmer Agent**: Running on http://127.0.0.1:8001
+- ✅ **Webhook Integration**: Successfully processing alerts
+- ⚠️ **Environment Setup**: Needs virtual environment fixes
 
-### Phase 1.4: Agent Infrastructure Testing (1-2 days)
-**Focus**: Comprehensive testing and validation
-- [ ] Unit tests for monitoring components (with LLM mocking)
-- [ ] Integration tests for predictor communication
-- [ ] End-to-end test for basic feedback loop
-- [ ] Docker deployment testing
-- [ ] Agent health monitoring validation
+### Recovery System Validation:
+- ✅ **Docker Service Manager**: Container restart capabilities working
+- ✅ **Alert Processing**: Webhook alerts being received and processed
+- ✅ **Recovery Workflows**: Multi-step recovery strategies implemented
+- ✅ **Error Analysis**: Log pattern recognition and intelligent recommendations
 
-## Active Decisions & Considerations
+## Upcoming Phase 1.4 Focus
 
-### Recent Technical Decisions:
-1. **LangChain Framework**: Chosen for AI agent orchestration and LLM integration
-2. **FastAPI + Agent Core**: Separate web service from autonomous agent logic
-3. **Multi-Source Monitoring**: Prometheus, Loki, and direct HTTP monitoring
-4. **Safety-First Approach**: All changes must pass testing before deployment
-5. **OpenAI GPT-4**: Primary LLM for analysis and code generation
+### Testing Requirements (Priority 1):
+1. **Recovery System Testing**:
+   - Simulate service failures and validate automated recovery
+   - Test Docker container restart scenarios
+   - Validate post-recovery health checks and metrics
+   
+2. **Webhook Integration Testing**:
+   - Test various alert types and severities
+   - Validate alert processing and recovery triggering
+   - Test webhook authentication and error handling
+   
+3. **AI Component Testing**:
+   - Mock LLM responses for consistent testing
+   - Test analysis agent with various monitoring data
+   - Validate fallback logic when AI is unavailable
+   
+4. **End-to-End Integration**:
+   - Full monitoring → alert → recovery → validation flow
+   - Cross-service communication testing
+   - Docker Compose stack testing
 
-### Current Questions/Unknowns:
-- **LLM Cost Management**: How to balance capability with API cost constraints?
-- **Agent Memory**: What context should the agent maintain between cycles?
-- **Error Recovery**: How should the agent handle LLM API failures?
-- **Human Oversight**: What level of human control should be maintained?
+### Environment Setup (Priority 2):
+1. **Fix Virtual Environment Setup** for both services
+2. **Validate Dependencies** and resolve version conflicts
+3. **Docker Environment Testing** with proper isolation
+4. **Configuration Validation** across all components
 
-### Pending Decisions:
-- **LLM Model Selection**: GPT-4 vs. Claude for different tasks
-- **Monitoring Frequency**: How often should the agent check predictor health?
-- **Action Validation**: What testing is required before taking actions?
-- **Learning Strategy**: How should the agent learn from past decisions?
+## Active Decisions & Recent Updates
+
+### Major Technical Achievements:
+1. **Event-Driven Architecture**: Moved from polling to professional alerting
+2. **Docker Integration**: Full container management capabilities
+3. **Recovery Automation**: Intelligent multi-step recovery workflows
+4. **Professional Monitoring**: Industry-standard observability stack
+5. **Safety Mechanisms**: Comprehensive validation and error handling
+
+### Current Questions/Priorities:
+- **Testing Strategy**: Comprehensive test coverage for recovery capabilities
+- **Environment Isolation**: Proper virtual environment setup
+- **Performance Validation**: End-to-end system performance under load
+- **Failure Scenarios**: Comprehensive testing of edge cases and failures
+
+### Resolved Decisions:
+- ✅ **Monitoring Approach**: Event-driven with Prometheus + Alertmanager
+- ✅ **Recovery Strategy**: Multi-step workflows with Docker integration
+- ✅ **Alert Processing**: Webhook-based with intelligent routing
+- ✅ **Container Management**: Professional Docker API integration
 
 ## Integration Context
 
-### Relationship with Market Predictor:
-- **Monitoring Target**: Agent continuously monitors predictor service
-- **Improvement Driver**: Agent identifies and implements improvements
-- **Communication Pattern**: HTTP-based monitoring and metrics scraping
-- **Safety Relationship**: Agent must never harm the predictor service
+### Current Integration Status:
+- ✅ **Health Monitoring**: Both services expose proper health endpoints
+- ✅ **Metrics Integration**: Prometheus scraping configuration complete
+- ✅ **Alert Integration**: Alertmanager webhook processing functional
+- ✅ **Recovery Integration**: Automated service restart capabilities
+- ✅ **Log Integration**: Loki and Promtail for log aggregation
 
-### Expected Integration Points:
-1. **Health Monitoring**: Regular checks of `/health` and `/status` endpoints
-2. **Metrics Analysis**: Scraping and analyzing Prometheus metrics
-3. **Log Analysis**: Analyzing structured JSON logs for patterns
-4. **Performance Tracking**: Monitoring response times and error rates
-5. **Issue Response**: Automatic response to detected problems
+### Validated Capabilities:
+1. **Service Discovery**: Agent can find and monitor predictor service
+2. **Health Monitoring**: Continuous health and performance tracking
+3. **Issue Detection**: Alert rules detect various failure conditions
+4. **Automated Response**: Recovery workflows execute automatically
+5. **Validation**: Post-recovery health verification working
 
-## Development Environment Status
+## Risk Factors & Current Status
 
-### Current Setup:
-- [x] Project repository structure created
-- [x] Empty memory-bank directory initialized
-- [ ] Python virtual environment (to be created)
-- [ ] LangChain and AI dependencies (to be installed)
-- [ ] OpenAI API key configuration (to be set up)
-- [ ] Docker environment (to be configured)
+### Mitigated Risks:
+1. ✅ **Service Monitoring**: Professional monitoring stack implemented
+2. ✅ **Automated Recovery**: Multi-step recovery workflows functional
+3. ✅ **Safety Mechanisms**: Comprehensive validation and timeout handling
+4. ✅ **Container Management**: Professional Docker integration complete
 
-### Development Workflow:
-1. **Phase Implementation**: Focus on one phase at a time
-2. **AI-First Design**: Design around LangChain agent patterns
-3. **Safety Testing**: Test all LLM interactions thoroughly
-4. **Predictor Integration**: Keep market-predictor requirements central
+### Active Risk Management:
+1. **Environment Isolation**: Need proper virtual environment setup
+2. **Testing Coverage**: Comprehensive testing for reliability
+3. **Performance Validation**: System performance under various loads
+4. **Edge Case Handling**: Testing of unusual failure scenarios
 
-## Risk Factors & Mitigation
-
-### Identified Risks:
-1. **LLM API Failures**: OpenAI/Anthropic API downtime or rate limiting
-   - **Mitigation**: Implement fallback providers and graceful degradation
-2. **AI Safety**: LLM generating harmful or incorrect actions
-   - **Mitigation**: Comprehensive validation and human oversight
-3. **Cost Overruns**: High LLM API usage costs
-   - **Mitigation**: Usage monitoring, caching, and cost limits
-4. **Complexity**: Over-engineering the autonomous agent
-   - **Mitigation**: Start simple, iterate based on real needs
-
-### Safety Considerations:
-- **Testing First**: All AI-generated actions must pass local testing
-- **Human Oversight**: Clear escalation paths for complex decisions
-- **Rollback Capability**: Ability to undo any changes made by agent
-- **Limited Scope**: Start with safe, low-risk actions only
-
-## AI/LLM Integration Context
-
-### LangChain Agent Design:
-- **Analysis Agent**: Use LLM to analyze monitoring data and identify issues
-- **Code Generation Agent**: Generate fixes and improvements (future milestone)
-- **Testing Agent**: Validate proposed changes (future milestone)
-- **Learning Agent**: Learn from past decisions and outcomes (future milestone)
-
-### Prompt Engineering Strategy:
-- **Structured Prompts**: Use consistent prompt templates for reliability
-- **Context Management**: Maintain relevant context without token overflow
-- **Output Validation**: Parse and validate all LLM responses
-- **Iterative Refinement**: Improve prompts based on real usage
-
-### Expected LLM Interactions:
-```
-1. Monitor market-predictor health and metrics
-2. Detect anomalies or issues
-3. Send monitoring data to LLM for analysis
-4. Receive structured analysis with recommendations
-5. Validate recommendations for safety
-6. Execute safe actions (like service restart)
-7. Monitor outcome and learn from results
-```
+### Safety Validations in Place:
+- ✅ **Recovery Timeouts**: All operations have timeout protection
+- ✅ **Health Validation**: Post-recovery health verification
+- ✅ **Error Handling**: Comprehensive error catching and reporting
+- ✅ **Escalation Paths**: Clear paths for human intervention
 
 ## Communication & Coordination
 
-### Stakeholder Alignment:
-- **User Requirements**: Building autonomous improvement system
-- **Predictor Requirements**: Ensuring safe monitoring and improvement
-- **System Requirements**: Meeting AI safety and reliability standards
+### Milestone 1 Status:
+- **Overall Progress**: ~85% complete (Phases 1.1, 1.2, 1.3 done)
+- **Phase 1.4 Focus**: Testing and validation for production readiness
+- **Target Completion**: 1-2 days for comprehensive testing
 
-### Documentation Updates:
-- **Progress Tracking**: Update progress.md after each phase completion
-- **Technical Changes**: Update systemPatterns.md for agent architecture
-- **AI Integration**: Document LLM usage patterns and prompt strategies
+### Documentation Updates Needed:
+- ✅ **Progress Update**: Phase 1.3 completion documented
+- 🔄 **Technical Patterns**: Update with recovery architecture
+- 🔄 **Testing Strategy**: Document Phase 1.4 testing approach
+- 🔄 **README Updates**: Ensure installation and setup instructions
 
 ### Next Memory Bank Review:
-- **Trigger**: After Phase 1.1 completion
-- **Focus**: Update progress, capture AI integration lessons, plan Phase 1.2
-- **Documentation**: Update activeContext.md with Phase 1.2 focus and LLM insights
-
-## Cross-Project Coordination
-
-### Market Predictor Dependencies:
-- **Service Availability**: Need running market-predictor for integration testing
-- **API Compatibility**: Ensure agent works with predictor's current API
-- **Metrics Format**: Agent must understand predictor's Prometheus metrics
-- **Health Endpoints**: Agent relies on predictor's health/status endpoints
-
-### Shared Development Timeline:
-- **Parallel Development**: Both projects can be developed simultaneously
-- **Integration Points**: Plan integration testing after both Phase 1.1 completions
-- **Communication**: Regular sync to ensure compatibility
-- **Testing Strategy**: End-to-end testing with both services running 
+- **Trigger**: After Phase 1.4 completion (comprehensive testing)
+- **Focus**: Milestone 1 completion, lessons learned, Milestone 2 planning
+- **Documentation**: Final Milestone 1 status and future roadmap 

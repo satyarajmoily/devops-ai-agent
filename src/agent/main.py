@@ -168,52 +168,57 @@ def create_app() -> FastAPI:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Monitoring cycle failed: {str(e)}")
     
+    @app.get("/debug/docker", tags=["Debug"])
+    async def debug_docker():
+        """Debug Docker API connectivity and permissions."""
+        from agent.services.docker_service import DockerServiceManager
+        
+        docker_service = DockerServiceManager()
+        debug_info = await docker_service.debug_docker_connectivity()
+        system_info = await docker_service.get_system_info()
+        
+        return {
+            "debug_info": debug_info,
+            "system_info": system_info
+        }
+    
+    @app.get("/orchestrator/status", tags=["Debug"])
+    async def orchestrator_status():
+        """Get orchestrator status with recovery action history."""
+        from agent.core.orchestrator import AgentOrchestrator
+        
+        orchestrator = AgentOrchestrator()
+        return orchestrator.get_status()
+    
     # Webhook endpoints
     @app.post("/webhook/alerts", response_model=WebhookResponse, tags=["Webhooks"])
     async def receive_alertmanager_webhook(webhook: AlertmanagerWebhook):
-        """Receive alerts from Alertmanager and trigger intelligent response."""
+        """Receive alerts from Alertmanager and trigger automated recovery."""
         if not monitoring_orchestrator:
             raise HTTPException(status_code=500, detail="Monitoring orchestrator not initialized")
         
-        print(f"🚨 Received {len(webhook.alerts)} alerts from Alertmanager")
+        # Convert webhook to dictionary format for processing
+        alert_data = {
+            'alerts': [
+                {
+                    'labels': alert.labels,
+                    'annotations': alert.annotations,
+                    'status': alert.status,
+                    'starts_at': alert.starts_at.isoformat() if alert.starts_at else None,
+                    'ends_at': alert.ends_at.isoformat() if alert.ends_at else None
+                }
+                for alert in webhook.alerts
+            ]
+        }
         
-        actions_triggered = 0
-        
-        for alert in webhook.alerts:
-            if alert.status == "firing":
-                print(f"  🔥 FIRING: {alert.labels.get('alertname', 'Unknown')} - {alert.annotations.get('summary', 'No summary')}")
-                
-                # Trigger AI analysis for the alert
-                try:
-                    if monitoring_orchestrator.analysis_agent:
-                        # Create analysis context from alert
-                        analysis_context = {
-                            "alert_name": alert.labels.get("alertname"),
-                            "severity": alert.labels.get("severity", "unknown"),
-                            "instance": alert.labels.get("instance"),
-                            "summary": alert.annotations.get("summary"),
-                            "description": alert.annotations.get("description"),
-                            "starts_at": alert.starts_at.isoformat(),
-                            "labels": alert.labels,
-                            "annotations": alert.annotations
-                        }
-                        
-                        # Trigger intelligent analysis
-                        print(f"  🤖 Triggering AI analysis for alert: {alert.labels.get('alertname')}")
-                        # Note: Analysis logic will be enhanced to handle alert context
-                        actions_triggered += 1
-                        
-                except Exception as e:
-                    print(f"  ❌ Error analyzing alert {alert.labels.get('alertname')}: {str(e)}")
-            
-            elif alert.status == "resolved":
-                print(f"  ✅ RESOLVED: {alert.labels.get('alertname', 'Unknown')}")
+        # Handle alerts with recovery integration
+        result = await monitoring_orchestrator.handle_alert_webhook(alert_data)
         
         return WebhookResponse(
             status="processed",
-            message=f"Processed {len(webhook.alerts)} alerts successfully",
-            alerts_processed=len(webhook.alerts),
-            actions_triggered=actions_triggered
+            message=f"Processed {result['received_alerts']} alerts, executed {result['processed_alerts']} recoveries",
+            alerts_processed=result['received_alerts'],
+            actions_triggered=result['processed_alerts']
         )
     
     @app.get("/", tags=["Root"])

@@ -9,6 +9,7 @@ from agent.agents.analyzer import AnalysisAgent, AnalysisResult, MonitoringData
 from agent.config.settings import get_settings
 from agent.models.health import AgentAction, MonitoringTarget
 from agent.services.predictor_client import PredictorClient
+from agent.services.recovery_service import RecoveryService
 
 
 class MonitoringOrchestrator:
@@ -18,6 +19,7 @@ class MonitoringOrchestrator:
         """Initialize the monitoring orchestrator."""
         self.settings = get_settings()
         self.analysis_agent = AnalysisAgent()
+        self.recovery_service = RecoveryService()
         self.is_running = False
         self.monitoring_task: Optional[asyncio.Task] = None
         self.last_cycle_time: Optional[datetime] = None
@@ -270,4 +272,195 @@ class MonitoringOrchestrator:
                 }
                 for action in self.recent_actions
             ]
+        }
+    
+    async def handle_alert_webhook(self, alert_data: Dict) -> Dict:
+        """Handle incoming alert webhook from Alertmanager.
+        
+        Args:
+            alert_data: Alert data from Alertmanager webhook
+            
+        Returns:
+            Response dictionary with handling results
+        """
+        try:
+            # Log the alert
+            alerts = alert_data.get('alerts', [])
+            print(f"🚨 Received {len(alerts)} alerts from Alertmanager")
+            
+            response = {
+                'received_alerts': len(alerts),
+                'processed_alerts': 0,
+                'recovery_results': [],
+                'errors': []
+            }
+            
+            for alert in alerts:
+                try:
+                    alert_name = alert.get('labels', {}).get('alertname', 'unknown')
+                    service_name = alert.get('labels', {}).get('service', 'unknown')
+                    severity = alert.get('labels', {}).get('severity', 'unknown')
+                    status = alert.get('status', 'unknown')
+                    
+                    print(f"  🔥 {status.upper()}: {alert_name} - {alert.get('annotations', {}).get('summary', 'No summary')}")
+                    
+                    # Only process firing alerts
+                    if status == 'firing':
+                        print(f"  🤖 Triggering recovery for alert: {alert_name}")
+                        
+                        # Execute recovery using the recovery service
+                        recovery_result = await self.recovery_service.execute_recovery(alert_data)
+                        
+                        # Log recovery result
+                        if recovery_result.success:
+                            print(f"  ✅ Recovery completed successfully for {alert_name}")
+                            print(f"     Duration: {recovery_result.duration_seconds:.1f}s")
+                            print(f"     Steps executed: {recovery_result.metrics.get('total_steps', 0)}")
+                        else:
+                            print(f"  ❌ Recovery failed for {alert_name}")
+                            print(f"     Error: {recovery_result.error_message}")
+                            
+                        # Store result
+                        response['recovery_results'].append({
+                            'alert_name': alert_name,
+                            'service_name': service_name,
+                            'success': recovery_result.success,
+                            'duration_seconds': recovery_result.duration_seconds,
+                            'steps_executed': len(recovery_result.steps_executed),
+                            'recommendations': recovery_result.recommendations
+                        })
+                        
+                        # Record action in monitoring history
+                        action = AgentAction(
+                            action_id=f"recovery_{alert_name}_{int(time.time())}",
+                            action_type="automated_recovery",
+                            target_service=service_name,
+                            description=f"Automated recovery for alert {alert_name}",
+                            status="completed" if recovery_result.success else "failed",
+                            details={
+                                'alert_name': alert_name,
+                                'recovery_steps': len(recovery_result.steps_executed),
+                                'duration_seconds': recovery_result.duration_seconds,
+                                'recommendations': recovery_result.recommendations
+                            }
+                        )
+                        self._add_recent_action(action)
+                        
+                        response['processed_alerts'] += 1
+                        
+                    elif status == 'resolved':
+                        print(f"  ✅ Alert resolved: {alert_name}")
+                        
+                        # Record resolution in monitoring history
+                        action = AgentAction(
+                            action_id=f"resolved_{alert_name}_{int(time.time())}",
+                            action_type="alert_resolved",
+                            target_service=service_name,
+                            description=f"Alert {alert_name} resolved",
+                            status="completed"
+                        )
+                        self._add_recent_action(action)
+                        
+                except Exception as e:
+                    error_msg = f"Error processing alert: {e}"
+                    print(f"  ❌ {error_msg}")
+                    response['errors'].append(error_msg)
+            
+            return response
+            
+        except Exception as e:
+            print(f"❌ Error handling alert webhook: {e}")
+            return {
+                'error': str(e),
+                'received_alerts': 0,
+                'processed_alerts': 0,
+                'recovery_results': [],
+                'errors': [str(e)]
+            }
+    
+    async def execute_manual_recovery(self, service_name: str, recovery_type: str = "full") -> Dict:
+        """Execute manual recovery for a service.
+        
+        Args:
+            service_name: Name of the service to recover
+            recovery_type: Type of recovery (full, restart, logs)
+            
+        Returns:
+            Recovery result dictionary
+        """
+        try:
+            print(f"🔧 Executing manual recovery for {service_name} (type: {recovery_type})")
+            
+            # Create mock alert data for manual recovery
+            mock_alert_data = {
+                'alerts': [{
+                    'labels': {
+                        'alertname': f'Manual{recovery_type.capitalize()}Recovery',
+                        'service': service_name,
+                        'severity': 'warning'
+                    },
+                    'annotations': {
+                        'summary': f'Manual {recovery_type} recovery requested',
+                        'action_required': 'restart_service' if recovery_type in ['full', 'restart'] else 'check_logs'
+                    },
+                    'status': 'firing'
+                }]
+            }
+            
+            # Execute recovery
+            recovery_result = await self.recovery_service.execute_recovery(mock_alert_data)
+            
+            # Record action
+            action = AgentAction(
+                action_id=f"manual_recovery_{service_name}_{int(time.time())}",
+                action_type="manual_recovery",
+                target_service=service_name,
+                description=f"Manual {recovery_type} recovery for {service_name}",
+                status="completed" if recovery_result.success else "failed",
+                details={
+                    'recovery_type': recovery_type,
+                    'steps_executed': len(recovery_result.steps_executed),
+                    'duration_seconds': recovery_result.duration_seconds,
+                    'recommendations': recovery_result.recommendations
+                }
+            )
+            self._add_recent_action(action)
+            
+            return {
+                'success': recovery_result.success,
+                'service_name': service_name,
+                'recovery_type': recovery_type,
+                'duration_seconds': recovery_result.duration_seconds,
+                'steps_executed': len(recovery_result.steps_executed),
+                'recommendations': recovery_result.recommendations,
+                'error_message': recovery_result.error_message
+            }
+            
+        except Exception as e:
+            error_msg = f"Manual recovery failed: {e}"
+            print(f"❌ {error_msg}")
+            return {
+                'success': False,
+                'service_name': service_name,
+                'recovery_type': recovery_type,
+                'error_message': error_msg
+            }
+    
+    def get_recovery_status(self) -> Dict:
+        """Get current recovery service status and capabilities.
+        
+        Returns:
+            Recovery status dictionary
+        """
+        return {
+            'recovery_service_available': True,
+            'docker_available': self.recovery_service.docker_manager.is_available(),
+            'supported_actions': [
+                'restart_service', 'check_logs', 'check_service_health', 
+                'investigate_performance', 'check_resource_usage'
+            ],
+            'recent_recoveries': [
+                action for action in self.recent_actions 
+                if action.action_type in ['automated_recovery', 'manual_recovery']
+            ][-10:]  # Last 10 recovery actions
         }
