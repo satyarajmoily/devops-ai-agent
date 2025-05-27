@@ -1,18 +1,18 @@
-# System Patterns - Market Programmer Agent
+# System Patterns - DevOps AI Agent
 
 ## System Architecture
 
-### High-Level Autonomous Agent Architecture
+### High-Level DevOps AI Agent Architecture
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│ Market Predictor│────│ Agent Monitoring│────│  LangChain LLM  │
-│   (Target)      │    │    System       │    │   (Analysis)    │
+│ Market Predictor│────│ DevOps Monitoring│───│  LangChain LLM  │
+│ Infrastructure  │    │     System      │    │   (DevOps AI)   │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
                                 │
                                 │
                        ┌─────────────────┐    ┌─────────────────┐
-                       │  GitHub API     │────│ Local Testing   │
-                       │ (Deployment)    │    │  Environment    │
+                       │  Docker API     │────│ Infrastructure  │
+                       │ (Orchestration) │    │   Testing Env   │
                        └─────────────────┘    └─────────────────┘
 ```
 

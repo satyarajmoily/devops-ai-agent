@@ -323,7 +323,7 @@ class MonitoringOrchestrator:
                     # Only process firing alerts
                     if status == 'firing':
                         # PROTECTION: Check if this is a self-alert to prevent bootstrap paradox
-                        if service_name == 'market-programmer-agent':
+                        if service_name == 'devops-ai-agent':
                             print(f"  ⚠️  Skipping self-recovery for {alert_name} - agent cannot restart itself")
                             print(f"     Self-alerts are handled by external monitoring (Docker health checks)")
                             # Record the skip as a protective action

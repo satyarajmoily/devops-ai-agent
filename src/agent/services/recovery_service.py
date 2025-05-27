@@ -139,18 +139,18 @@ class RecoveryService:
                     timeout_seconds=30
                 )
             ],
-            # MarketProgrammerAgentDown: Agent self-restart removed to prevent bootstrap paradox
+            # DevOpsAIAgentDown: Agent self-restart removed to prevent bootstrap paradox
             # Agent alerts are now routed to external monitoring, not back to agent itself
             # If agent fails, Docker health checks and restart policies will handle recovery
-            'MarketProgrammerAgentDown': [
+            'DevOpsAIAgentDown': [
                 RecoveryStep(
                     action=RecoveryAction.CHECK_LOGS,
-                    target="market-programmer-agent",
+                    target="devops-ai-agent",
                     timeout_seconds=10
                 ),
                 RecoveryStep(
                     action=RecoveryAction.ESCALATE_TO_HUMAN,
-                    target="market-programmer-agent",
+                    target="devops-ai-agent",
                     timeout_seconds=5
                 )
             ],

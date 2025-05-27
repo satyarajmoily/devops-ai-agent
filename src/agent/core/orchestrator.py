@@ -89,8 +89,8 @@ class AgentOrchestrator:
         # For common services, map to actual container names
         if service_name == 'market-predictor':
             container_name = 'market-predictor'
-        elif service_name == 'market-programmer-agent':
-            container_name = 'market-programmer-agent'
+        elif service_name == 'devops-ai-agent':
+            container_name = 'devops-ai-agent'
         
         self.logger.info(f"Attempting to recover service: {service_name}, container: {container_name}")
         

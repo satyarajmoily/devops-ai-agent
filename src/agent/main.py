@@ -1,4 +1,4 @@
-"""Main FastAPI application for Market Programmer Agent."""
+"""Main FastAPI application for DevOps AI Agent."""
 
 import time
 from contextlib import asynccontextmanager
@@ -52,8 +52,8 @@ def create_app() -> FastAPI:
     settings = get_settings()
     
     app = FastAPI(
-        title="Market Programmer Agent",
-        description="Autonomous Software Improvement System",
+        title="DevOps AI Agent",
+        description="Intelligent Infrastructure Management and DevOps Automation System",
         version=settings.service_version,
         docs_url="/docs",
         redoc_url="/redoc",

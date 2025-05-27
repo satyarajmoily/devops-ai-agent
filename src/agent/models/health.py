@@ -78,4 +78,4 @@ class ErrorResponse(BaseModel):
     message: str = Field(..., description="Error message")
     timestamp: datetime = Field(default_factory=datetime.utcnow, description="Error timestamp")
     details: Optional[Dict] = Field(default=None, description="Additional error details")
-    service: str = Field(default="market-programmer-agent", description="Service that generated the error")
+    service: str = Field(default="devops-ai-agent", description="Service that generated the error")

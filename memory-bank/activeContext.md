@@ -1,4 +1,4 @@
-# Active Context - Market Programmer Agent
+# Active Context - DevOps AI Agent
 
 ## Current Focus: CRITICAL BUG FIX - Bootstrap Paradox RESOLVED ✅
 
@@ -15,7 +15,7 @@
 - ✅ **System Instability**: Agent never reached stable operational state
 
 ### Root Cause Analysis:
-1. **Self-Monitoring Configuration**: `MarketProgrammerAgentDown` alert was routed back to the agent itself
+1. **Self-Monitoring Configuration**: `DevOpsAIAgentDown` alert was routed back to the agent itself
 2. **Self-Restart Capability**: Agent had recovery strategy to restart itself when receiving down alerts
 3. **Race Condition**: Agent would restart before Prometheus could detect it as healthy again
 4. **Bootstrap Paradox**: Service responsible for its own lifecycle management
@@ -24,19 +24,19 @@
 
 #### 1. **Alertmanager Routing Fix** ✅
 - **File**: `monitoring/alertmanager/alertmanager.yml`
-- **Change**: Added specific route for `service: market-programmer-agent` alerts
+- **Change**: Added specific route for `service: devops-ai-agent` alerts
 - **Outcome**: Agent self-alerts now go to external logging endpoint (`http://httpbin.org/post`)
 - **Result**: Agent never receives alerts about itself being down
 
 #### 2. **Recovery Strategy Modification** ✅
-- **File**: `market-programmer-agent/src/agent/services/recovery_service.py`
-- **Change**: Removed `RESTART_SERVICE` action from `MarketProgrammerAgentDown` strategy
+- **File**: `devops-ai-agent/src/agent/services/recovery_service.py`
+- **Change**: Removed `RESTART_SERVICE` action from `DevOpsAIAgentDown` strategy
 - **Replacement**: Changed to `ESCALATE_TO_HUMAN` action for agent issues
 - **Result**: Agent cannot restart itself even if it somehow receives self-alerts
 
 #### 3. **Double Protection in Alert Handler** ✅
-- **File**: `market-programmer-agent/src/agent/core/monitoring.py`
-- **Change**: Added explicit check for `service_name == 'market-programmer-agent'`
+- **File**: `devops-ai-agent/src/agent/core/monitoring.py`
+- **Change**: Added explicit check for `service_name == 'devops-ai-agent'`
 - **Behavior**: Skips processing and logs protective action if self-alert received
 - **Result**: Multiple layers of protection against self-recovery
 

@@ -272,7 +272,7 @@ class DockerServiceManager:
             # Check health if service exposes health endpoint
             if service_name == "market-predictor":
                 validation.update(await self._check_service_health("http://localhost:8000/health"))
-            elif service_name == "market-programmer-agent":
+            elif service_name == "devops-ai-agent":
                 validation.update(await self._check_service_health("http://localhost:8001/health"))
             
         except Exception as e:
@@ -414,7 +414,7 @@ class DockerServiceManager:
                 
                 # Try to find our own container
                 try:
-                    our_container = self._docker_client.containers.get("market-programmer-agent")
+                    our_container = self._docker_client.containers.get("devops-ai-agent")
                     debug_info["our_container_id"] = our_container.id
                     self.logger.info(f"Found our own container: {our_container.id}")
                 except NotFound:
@@ -422,7 +422,7 @@ class DockerServiceManager:
                 
                 # Test specific service containers
                 service_tests = {}
-                for service in ["market-predictor", "market-programmer-agent", "prometheus", "alertmanager"]:
+                for service in ["market-predictor", "devops-ai-agent", "prometheus", "alertmanager"]:
                     try:
                         container = self._docker_client.containers.get(service)
                         service_tests[service] = {

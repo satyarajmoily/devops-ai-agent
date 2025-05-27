@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     api_prefix: str = Field(default="/api/v1", description="API prefix")
     
     # Service settings
-    service_name: str = Field(default="market-programmer-agent", description="Service name")
+    service_name: str = Field(default="devops-ai-agent", description="Service name")
     service_version: str = Field(default="0.1.0", description="Service version")
     
     # LLM Configuration
