@@ -45,6 +45,7 @@ class AgentDetailedStatus(BaseModel):
     # Configuration
     safety_mode: bool = Field(..., description="Whether safety mode is enabled")
     learning_enabled: bool = Field(..., description="Whether learning is enabled")
+    fallback_enabled: bool = Field(..., description="Whether fallback analysis is enabled")
 
 
 class MonitoringTarget(BaseModel):

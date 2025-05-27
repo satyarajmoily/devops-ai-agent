@@ -147,8 +147,24 @@ class MonitoringOrchestrator:
                 
                 # Analyze monitoring data
                 if self.analysis_agent.is_available():
-                    analysis_result = await self.analysis_agent.analyze_monitoring_data(monitoring_data)
-                    await self._handle_analysis_result(analysis_result)
+                    try:
+                        analysis_result = await self.analysis_agent.analyze_monitoring_data(monitoring_data)
+                        await self._handle_analysis_result(analysis_result)
+                    except ValueError as e:
+                        if "fallback is disabled" in str(e):
+                            print(f"❌ AI analysis failed and fallback is disabled: {e}")
+                            print("⚠️  Monitoring cycle aborted due to AI failure without fallback")
+                            # Record the failure as an action
+                            action = AgentAction(
+                                action_id=f"ai_failure_{int(time.time())}",
+                                action_type="ai_failure",
+                                target_service="market-predictor",
+                                description=f"AI analysis failed without fallback: {e}",
+                                status="failed"
+                            )
+                            self._add_recent_action(action)
+                        else:
+                            raise  # Re-raise other ValueError types
                 else:
                     print("⚠️  Analysis agent not available, using basic monitoring")
                 

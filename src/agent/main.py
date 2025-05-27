@@ -120,7 +120,8 @@ def create_app() -> FastAPI:
             recent_actions=recent_actions,
             pending_actions=0,  # Will be implemented in later phases
             safety_mode=settings.safety_mode,
-            learning_enabled=settings.learning_enabled
+            learning_enabled=settings.learning_enabled,
+            fallback_enabled=settings.fallback_enabled
         )
     
     # Agent control endpoints

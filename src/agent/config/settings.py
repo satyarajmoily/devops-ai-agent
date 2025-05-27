@@ -52,6 +52,7 @@ class Settings(BaseSettings):
     max_actions_per_cycle: int = Field(default=3, description="Maximum actions per monitoring cycle")
     safety_mode: bool = Field(default=True, description="Enable safety mode (human approval required)")
     learning_enabled: bool = Field(default=True, description="Enable learning from outcomes")
+    fallback_enabled: bool = Field(default=True, description="Enable fallback to rule-based analysis when AI fails")
     
     # Testing Configuration
     enable_testing: bool = Field(default=True, description="Enable local testing before deployment")

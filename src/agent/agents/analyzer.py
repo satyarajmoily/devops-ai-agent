@@ -148,6 +148,10 @@ Only respond with valid JSON - no additional text or explanations."""
                 result_dict = json.loads(response.content)
                 return AnalysisResult(**result_dict)
             except json.JSONDecodeError as e:
+                # Check if fallback is enabled for malformed JSON
+                if not self.settings.fallback_enabled:
+                    raise ValueError(f"AI analysis returned malformed JSON and fallback is disabled: {e}")
+                
                 # Fallback for malformed JSON
                 return AnalysisResult(
                     issue_detected=False,
@@ -158,6 +162,11 @@ Only respond with valid JSON - no additional text or explanations."""
                 )
         
         except Exception as e:
+            # Check if fallback is enabled
+            if not self.settings.fallback_enabled:
+                # No fallback allowed - raise the error
+                raise ValueError(f"AI analysis failed and fallback is disabled: {e}")
+            
             # Fallback analysis for LLM failures
             return self._fallback_analysis(monitoring_data, str(e))
     
