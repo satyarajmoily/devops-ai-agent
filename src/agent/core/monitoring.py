@@ -1,4 +1,4 @@
-"""Core monitoring orchestration for the Market Programmer Agent."""
+"""Core monitoring orchestration for the DevOps AI Agent."""
 
 import asyncio
 import time
@@ -9,17 +9,20 @@ from agent.agents.analyzer import AnalysisAgent, AnalysisResult, MonitoringData
 from agent.config.settings import get_settings
 from agent.models.health import AgentAction, MonitoringTarget
 from agent.services.predictor_client import PredictorClient
-from agent.services.recovery_service import RecoveryService
+from agent.services.recovery_service import PureAIRecoveryService
 
 
 class MonitoringOrchestrator:
-    """Orchestrates monitoring activities for target services."""
+    """Orchestrates monitoring activities for target services with pure AI-driven recovery."""
     
     def __init__(self):
         """Initialize the monitoring orchestrator."""
         self.settings = get_settings()
         self.analysis_agent = AnalysisAgent()
-        self.recovery_service = RecoveryService()
+        
+        # Use pure AI recovery service instead of static patterns
+        self.ai_recovery_service = PureAIRecoveryService()
+        
         self.is_running = False
         self.monitoring_task: Optional[asyncio.Task] = None
         self.last_cycle_time: Optional[datetime] = None
@@ -28,6 +31,8 @@ class MonitoringOrchestrator:
         
         # Initialize monitoring targets
         self._initialize_targets()
+        
+        print("🤖 DevOps AI Agent initialized with pure AI-driven recovery (zero hardcoded patterns)")
     
     def _initialize_targets(self):
         """Initialize monitoring targets."""
@@ -291,7 +296,7 @@ class MonitoringOrchestrator:
         }
     
     async def handle_alert_webhook(self, alert_data: Dict) -> Dict:
-        """Handle incoming alert webhook from Alertmanager.
+        """Handle incoming alert webhook from Alertmanager with pure AI-driven recovery.
         
         Args:
             alert_data: Alert data from Alertmanager webhook
@@ -307,7 +312,7 @@ class MonitoringOrchestrator:
             response = {
                 'received_alerts': len(alerts),
                 'processed_alerts': 0,
-                'recovery_results': [],
+                'ai_recovery_results': [],
                 'errors': []
             }
             
@@ -337,45 +342,11 @@ class MonitoringOrchestrator:
                             self._add_recent_action(action)
                             continue
                         
-                        print(f"  🤖 Triggering recovery for alert: {alert_name}")
+                        print(f"  🤖 Triggering AI-driven recovery for alert: {alert_name}")
+                        print(f"     🧠 AI will analyze the situation and decide what actions to take...")
                         
-                        # Execute recovery using the recovery service
-                        recovery_result = await self.recovery_service.execute_recovery(alert_data)
-                        
-                        # Log recovery result
-                        if recovery_result.success:
-                            print(f"  ✅ Recovery completed successfully for {alert_name}")
-                            print(f"     Duration: {recovery_result.duration_seconds:.1f}s")
-                            print(f"     Steps executed: {recovery_result.metrics.get('total_steps', 0)}")
-                        else:
-                            print(f"  ❌ Recovery failed for {alert_name}")
-                            print(f"     Error: {recovery_result.error_message}")
-                            
-                        # Store result
-                        response['recovery_results'].append({
-                            'alert_name': alert_name,
-                            'service_name': service_name,
-                            'success': recovery_result.success,
-                            'duration_seconds': recovery_result.duration_seconds,
-                            'steps_executed': len(recovery_result.steps_executed),
-                            'recommendations': recovery_result.recommendations
-                        })
-                        
-                        # Record action in monitoring history
-                        action = AgentAction(
-                            action_id=f"recovery_{alert_name}_{int(time.time())}",
-                            action_type="automated_recovery",
-                            target_service=service_name,
-                            description=f"Automated recovery for alert {alert_name}",
-                            status="completed" if recovery_result.success else "failed",
-                            details={
-                                'alert_name': alert_name,
-                                'recovery_steps': len(recovery_result.steps_executed),
-                                'duration_seconds': recovery_result.duration_seconds,
-                                'recommendations': recovery_result.recommendations
-                            }
-                        )
-                        self._add_recent_action(action)
+                        # Execute pure AI-driven recovery asynchronously to prevent blocking
+                        asyncio.create_task(self._execute_ai_recovery_async(alert_data, alert_name, service_name, response))
                         
                         response['processed_alerts'] += 1
                         
@@ -405,22 +376,22 @@ class MonitoringOrchestrator:
                 'error': str(e),
                 'received_alerts': 0,
                 'processed_alerts': 0,
-                'recovery_results': [],
+                'ai_recovery_results': [],
                 'errors': [str(e)]
             }
     
-    async def execute_manual_recovery(self, service_name: str, recovery_type: str = "full") -> Dict:
-        """Execute manual recovery for a service.
+    async def execute_manual_recovery(self, service_name: str, recovery_type: str = "ai_analysis") -> Dict:
+        """Execute manual AI-driven recovery for a service.
         
         Args:
             service_name: Name of the service to recover
-            recovery_type: Type of recovery (full, restart, logs)
+            recovery_type: Type of recovery (always uses AI analysis now)
             
         Returns:
             Recovery result dictionary
         """
         try:
-            print(f"🔧 Executing manual recovery for {service_name} (type: {recovery_type})")
+            print(f"🤖 Executing manual AI-driven recovery for {service_name}")
             
             # Create mock alert data for manual recovery
             mock_alert_data = {
@@ -431,67 +402,138 @@ class MonitoringOrchestrator:
                         'severity': 'warning'
                     },
                     'annotations': {
-                        'summary': f'Manual {recovery_type} recovery requested',
-                        'action_required': 'restart_service' if recovery_type in ['full', 'restart'] else 'check_logs'
+                        'summary': f'Manual AI-driven recovery requested for {service_name}',
+                        'description': f'Human-initiated AI recovery for service {service_name}'
                     },
                     'status': 'firing'
                 }]
             }
             
-            # Execute recovery
-            recovery_result = await self.recovery_service.execute_recovery(mock_alert_data)
+            # Execute AI-driven recovery
+            ai_result = await self.ai_recovery_service.execute_recovery(mock_alert_data)
             
             # Record action
             action = AgentAction(
-                action_id=f"manual_recovery_{service_name}_{int(time.time())}",
-                action_type="manual_recovery",
+                action_id=f"manual_ai_recovery_{service_name}_{int(time.time())}",
+                action_type="manual_ai_recovery",
                 target_service=service_name,
-                description=f"Manual {recovery_type} recovery for {service_name}",
-                status="completed" if recovery_result.success else "failed",
+                description=f"Manual AI-driven recovery for {service_name}",
+                status="completed" if ai_result.success else "failed",
                 details={
                     'recovery_type': recovery_type,
-                    'steps_executed': len(recovery_result.steps_executed),
-                    'duration_seconds': recovery_result.duration_seconds,
-                    'recommendations': recovery_result.recommendations
+                    'ai_analysis': ai_result.ai_analysis,
+                    'root_cause': ai_result.root_cause,
+                    'ai_decision': ai_result.ai_decision,
+                    'actions_executed': ai_result.actions_executed,
+                    'duration_seconds': ai_result.duration_seconds,
+                    'confidence': ai_result.confidence
                 }
             )
             self._add_recent_action(action)
             
             return {
-                'success': recovery_result.success,
+                'success': ai_result.success,
                 'service_name': service_name,
-                'recovery_type': recovery_type,
-                'duration_seconds': recovery_result.duration_seconds,
-                'steps_executed': len(recovery_result.steps_executed),
-                'recommendations': recovery_result.recommendations,
-                'error_message': recovery_result.error_message
+                'recovery_type': 'ai_driven',
+                'ai_analysis': ai_result.ai_analysis,
+                'root_cause': ai_result.root_cause,
+                'ai_decision': ai_result.ai_decision,
+                'actions_executed': ai_result.actions_executed,
+                'duration_seconds': ai_result.duration_seconds,
+                'confidence': ai_result.confidence,
+                'escalation_required': ai_result.escalation_required,
+                'lessons_learned': ai_result.lessons_learned
             }
             
         except Exception as e:
-            error_msg = f"Manual recovery failed: {e}"
+            error_msg = f"Manual AI recovery failed: {e}"
             print(f"❌ {error_msg}")
             return {
                 'success': False,
                 'service_name': service_name,
-                'recovery_type': recovery_type,
+                'recovery_type': 'ai_driven',
                 'error_message': error_msg
             }
     
     def get_recovery_status(self) -> Dict:
-        """Get current recovery service status and capabilities.
+        """Get current AI recovery service status and capabilities.
         
         Returns:
             Recovery status dictionary
         """
         return {
-            'recovery_service_available': True,
-            'docker_available': self.recovery_service.docker_manager.is_available(),
-            'supported_actions': [
-                'restart_service', 'check_logs', 'check_service_health', 
-                'investigate_performance', 'check_resource_usage'
+            'recovery_service_type': 'pure_ai_driven',
+            'static_patterns': 'disabled',
+            'hardcoded_strategies': 'none',
+            'ai_capabilities': [
+                'dynamic_situation_analysis',
+                'root_cause_identification', 
+                'custom_action_planning',
+                'intelligent_decision_making',
+                'adaptive_execution',
+                'continuous_learning'
             ],
-            'recent_recoveries': [
+            'recent_ai_recoveries': [
                 action for action in self.recent_actions 
-                if action.action_type in ['automated_recovery', 'manual_recovery']
-            ][-10:]  # Last 10 recovery actions
+                if action.action_type in ['ai_driven_recovery', 'manual_ai_recovery']
+            ][-10:]  # Last 10 AI recovery actions
         }
+    
+    async def _execute_ai_recovery_async(self, alert_data: Dict, alert_name: str, service_name: str, response: Dict):
+        """Execute AI recovery asynchronously in the background.
+        
+        Args:
+            alert_data: Alert data from webhook
+            alert_name: Name of the alert
+            service_name: Target service name
+            response: Response dictionary to update (note: this won't update the HTTP response)
+        """
+        try:
+            print(f"  🔄 Starting background AI recovery for {alert_name}...")
+            
+            # Execute pure AI-driven recovery
+            ai_recovery_result = await self.ai_recovery_service.execute_recovery(alert_data)
+            
+            # Log AI recovery result
+            if ai_recovery_result.success:
+                print(f"  ✅ AI Recovery completed successfully for {alert_name}")
+                print(f"     🎯 Root Cause: {ai_recovery_result.root_cause}")
+                print(f"     ⚡ Actions Executed: {ai_recovery_result.actions_executed}")
+                print(f"     ⏱️ Duration: {ai_recovery_result.duration_seconds:.1f}s")
+                print(f"     🎯 AI Confidence: {ai_recovery_result.confidence:.2f}")
+            else:
+                print(f"  ❌ AI Recovery failed for {alert_name}")
+                print(f"     🔍 Root Cause: {ai_recovery_result.root_cause}")
+                print(f"     💡 AI Decision: {ai_recovery_result.ai_decision}")
+                if ai_recovery_result.escalation_required:
+                    print(f"     🚨 Escalation Required: Human intervention needed")
+            
+            # Record action in monitoring history
+            action = AgentAction(
+                action_id=f"ai_recovery_{alert_name}_{int(time.time())}",
+                action_type="ai_driven_recovery",
+                target_service=service_name,
+                description=f"AI-driven recovery for alert {alert_name}: {ai_recovery_result.ai_decision}",
+                status="completed" if ai_recovery_result.success else "failed",
+                details={
+                    'alert_name': alert_name,
+                    'root_cause': ai_recovery_result.root_cause,
+                    'ai_confidence': ai_recovery_result.confidence,
+                    'actions_executed': ai_recovery_result.actions_executed,
+                    'duration_seconds': ai_recovery_result.duration_seconds,
+                    'escalation_required': ai_recovery_result.escalation_required
+                }
+            )
+            self._add_recent_action(action)
+            
+        except Exception as e:
+            print(f"  ❌ Background AI recovery failed for {alert_name}: {e}")
+            # Record failure
+            action = AgentAction(
+                action_id=f"ai_recovery_failed_{alert_name}_{int(time.time())}",
+                action_type="ai_recovery_failure",
+                target_service=service_name,
+                description=f"AI recovery failed for {alert_name}: {e}",
+                status="failed"
+            )
+            self._add_recent_action(action)

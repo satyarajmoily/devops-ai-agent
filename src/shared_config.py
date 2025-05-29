@@ -168,23 +168,16 @@ class CentralizedConfig:
             return {
                 'openai_api_key': os.getenv('OPENAI_API_KEY', llm_config.get('openai_api_key', '')),
                 'anthropic_api_key': os.getenv('ANTHROPIC_API_KEY', llm_config.get('anthropic_api_key', '')),
-                'provider': llm_config.get('provider', 'openai'),
-                'model': llm_config.get('model', 'gpt-4'),
-                'temperature': llm_config.get('temperature', 0.1),
-                'max_tokens': llm_config.get('max_tokens', 4000),
-                'timeout': llm_config.get('timeout', 60)
+                'provider': llm_config.get('provider', os.getenv('LLM_PROVIDER')),
+                'model': llm_config.get('model', os.getenv('LLM_MODEL')),
+                'temperature': llm_config.get('temperature', float(os.getenv('LLM_TEMPERATURE', '0.1'))),
+                'max_tokens': llm_config.get('max_tokens', int(os.getenv('LLM_MAX_TOKENS', '4000'))),
+                'timeout': llm_config.get('timeout', int(os.getenv('LLM_TIMEOUT', '60')))
             }
         
-        # Fall back to environment variables
-        return {
-            'openai_api_key': os.getenv('OPENAI_API_KEY', ''),
-            'anthropic_api_key': os.getenv('ANTHROPIC_API_KEY', ''),
-            'provider': os.getenv('LLM_PROVIDER', 'openai'),
-            'model': os.getenv('LLM_MODEL', 'gpt-4'),
-            'temperature': float(os.getenv('LLM_TEMPERATURE', '0.1')),
-            'max_tokens': int(os.getenv('LLM_MAX_TOKENS', '4000')),
-            'timeout': int(os.getenv('LLM_TIMEOUT', '60'))
-        }
+        # NO DEFAULTS! Configuration must come from agents.yml
+        # This method should not be used - agents should use their own config loaders
+        raise RuntimeError("❌ CRITICAL: LLM configuration must come from agents.yml via agent-specific config loaders")
     
     def get_allowed_file_types(self) -> List[str]:
         """Get allowed file types."""

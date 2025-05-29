@@ -6,6 +6,9 @@ from typing import List, Optional
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings
 
+# Import our new config loader
+from .agents_config_loader import get_agent_llm_config
+
 
 class Settings(BaseSettings):
     """Agent settings with environment variable support and secret management."""
@@ -24,14 +27,14 @@ class Settings(BaseSettings):
     service_name: str = Field(default="devops-ai-agent", description="Service name")
     service_version: str = Field(default="0.1.0", description="Service version")
     
-    # LLM Configuration
+    # LLM Configuration - NO DEFAULTS! All values from agents.yml
     openai_api_key: Optional[SecretStr] = Field(default=None, description="OpenAI API key")
     anthropic_api_key: Optional[SecretStr] = Field(default=None, description="Anthropic API key")
-    llm_provider: str = Field(default="openai", description="LLM provider (openai/anthropic)")
-    llm_model: str = Field(default="gpt-4", description="LLM model name")
-    llm_temperature: float = Field(default=0.1, description="LLM temperature")
-    llm_max_tokens: int = Field(default=4000, description="LLM max tokens")
-    llm_timeout: int = Field(default=60, description="LLM request timeout")
+    llm_provider: Optional[str] = Field(default=None, description="LLM provider (from agents.yml)")
+    llm_model: Optional[str] = Field(default=None, description="LLM model name (from agents.yml)")
+    llm_temperature: Optional[float] = Field(default=None, description="LLM temperature (from agents.yml)")
+    llm_max_tokens: Optional[int] = Field(default=None, description="Maximum tokens (from agents.yml)")
+    llm_timeout: Optional[int] = Field(default=None, description="LLM timeout (from agents.yml)")
     
     # External Service Configuration
     market_predictor_url: str = Field(default="http://localhost:8000", description="Market predictor service URL")
@@ -57,6 +60,25 @@ class Settings(BaseSettings):
     # Testing Configuration
     enable_testing: bool = Field(default=True, description="Enable local testing before deployment")
     test_timeout: int = Field(default=300, description="Test timeout in seconds")
+    
+    def __init__(self, **kwargs):
+        """Initialize settings with LLM config from agents.yml."""
+        super().__init__(**kwargs)
+        
+        # Load LLM configuration from agents.yml - SINGLE SOURCE OF TRUTH
+        try:
+            agent_llm_config = get_agent_llm_config('devops-ai-agent')
+            
+            # Set LLM settings from agents.yml - NO FALLBACKS
+            self.llm_provider = agent_llm_config['provider']
+            self.llm_model = agent_llm_config['model']
+            self.llm_temperature = agent_llm_config['temperature']
+            self.llm_max_tokens = agent_llm_config['max_tokens']
+            self.llm_timeout = agent_llm_config['timeout']
+            
+        except Exception as e:
+            # FAIL FAST - No fallbacks, no defaults
+            raise RuntimeError(f"❌ CRITICAL: Cannot load LLM configuration from agents.yml: {e}")
     
     class Config:
         """Pydantic config."""
