@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 from agent.core.ai_context import AIContextGatherer
 from agent.core.ai_reasoning import AIDevOpsReasoning, AIDecision
-from agent.core.ai_executor import FlexibleActionExecutor, PlanExecutionResult
+from agent.core.ai_executor import intelligent_executor, PlanExecutionResult
 from agent.config.settings import get_settings
 
 
@@ -40,18 +40,17 @@ class PureAIRecoveryService:
         # Initialize AI components
         self.context_gatherer = AIContextGatherer()
         self.ai_reasoner = AIDevOpsReasoning()
-        self.action_executor = FlexibleActionExecutor()
         
-        self.logger.info("🤖 Pure AI Recovery Service initialized - zero hardcoded patterns")
+        self.logger.info("🤖 Pure AI Recovery Service initialized - intelligent diagnostic system active")
     
     async def execute_recovery(self, alert_data: Dict) -> AIRecoveryResult:
-        """Execute pure AI-driven recovery operation.
+        """Execute pure AI-driven recovery operation with intelligent diagnostics.
         
         Args:
             alert_data: Alert data from webhook
             
         Returns:
-            AI recovery result
+            AI recovery result with comprehensive diagnostic information
         """
         start_time = datetime.utcnow()
         
@@ -61,7 +60,7 @@ class PureAIRecoveryService:
         
         self.logger.info(f"🤖 Starting AI-driven recovery for alert: {alert_name}")
         self.logger.info(f"   Target service: {service_name}")
-        self.logger.info("   AI will analyze the situation and decide what to do...")
+        self.logger.info("   AI will analyze the situation and create intelligent diagnostic plan...")
         
         try:
             # Step 1: Gather comprehensive context
@@ -75,51 +74,32 @@ class PureAIRecoveryService:
             self.logger.info(f"🎯 AI Analysis: {ai_decision.analysis[:200]}...")
             self.logger.info(f"🔍 Root Cause: {ai_decision.root_cause}")
             self.logger.info(f"💡 AI Decision: {ai_decision.decision}")
-            self.logger.info(f"📋 Action Plan: {len(ai_decision.action_plan)} steps")
             self.logger.info(f"🎯 Confidence: {ai_decision.confidence:.2f}")
             
-            # Step 3: Execute AI-generated plan
-            if ai_decision.action_plan:
-                self.logger.info("⚡ Executing AI-generated action plan...")
-                execution_result = await self.action_executor.execute_ai_plan(ai_decision, context)
-                
-                # Calculate results
-                duration = (datetime.utcnow() - start_time).total_seconds()
-                
-                return AIRecoveryResult(
-                    success=execution_result.success,
-                    alert_name=alert_name,
-                    service_name=service_name,
-                    ai_analysis=ai_decision.analysis,
-                    root_cause=ai_decision.root_cause,
-                    ai_decision=ai_decision.decision,
-                    actions_executed=len(execution_result.actions_executed),
-                    duration_seconds=duration,
-                    confidence=ai_decision.confidence,
-                    escalation_required=execution_result.escalation_required,
-                    lessons_learned=execution_result.lessons_learned,
-                    execution_details=self._create_execution_summary(execution_result)
-                )
-            else:
-                # AI decided no actions needed or immediate escalation
-                duration = (datetime.utcnow() - start_time).total_seconds()
-                
-                escalation_needed = any(criteria in ai_decision.decision.lower() 
-                                      for criteria in ["escalate", "human", "manual"])
-                
-                return AIRecoveryResult(
-                    success=not escalation_needed,
-                    alert_name=alert_name,
-                    service_name=service_name,
-                    ai_analysis=ai_decision.analysis,
-                    root_cause=ai_decision.root_cause,
-                    ai_decision=ai_decision.decision,
-                    actions_executed=0,
-                    duration_seconds=duration,
-                    confidence=ai_decision.confidence,
-                    escalation_required=escalation_needed,
-                    lessons_learned=[f"AI determined no automated actions needed: {ai_decision.decision}"]
-                )
+            # Step 3: Execute AI-generated intelligent diagnostic plan
+            self.logger.info("⚡ Creating and executing intelligent diagnostic plan...")
+            execution_result = await intelligent_executor.execute_ai_plan(ai_decision, context)
+            
+            # Calculate results
+            duration = (datetime.utcnow() - start_time).total_seconds()
+            
+            # Extract lessons learned from execution
+            lessons_learned = self._extract_lessons_learned(execution_result, ai_decision)
+            
+            return AIRecoveryResult(
+                success=execution_result.success,
+                alert_name=alert_name,
+                service_name=service_name,
+                ai_analysis=ai_decision.analysis,
+                root_cause=ai_decision.root_cause,
+                ai_decision=ai_decision.decision,
+                actions_executed=len(execution_result.executed_operations),
+                duration_seconds=duration,
+                confidence=ai_decision.confidence,
+                escalation_required=execution_result.escalation_required,
+                lessons_learned=lessons_learned,
+                execution_details=self._create_execution_summary(execution_result)
+            )
                 
         except Exception as e:
             duration = (datetime.utcnow() - start_time).total_seconds()
@@ -154,16 +134,79 @@ class PureAIRecoveryService:
             return labels.get('service') or labels.get('job') or labels.get('container', 'unknown')
         return 'unknown'
     
+    def _extract_lessons_learned(self, execution_result: PlanExecutionResult, ai_decision: AIDecision) -> List[str]:
+        """Extract lessons learned from the execution."""
+        lessons = []
+        
+        # Plan-level insights
+        lessons.append(f"AI diagnostic plan type: {execution_result.plan_type}")
+        lessons.append(f"Completed {execution_result.phases_completed}/{execution_result.total_phases} diagnostic phases")
+        
+        # Success/failure patterns
+        successful_ops = [op for op in execution_result.executed_operations if op.get('success', False)]
+        failed_ops = [op for op in execution_result.executed_operations if not op.get('success', True)]
+        
+        if successful_ops:
+            successful_types = list(set([op.get('operation', 'unknown') for op in successful_ops]))
+            lessons.append(f"Successful operations: {', '.join(successful_types)}")
+        
+        if failed_ops:
+            failed_types = list(set([op.get('operation', 'unknown') for op in failed_ops]))
+            lessons.append(f"Failed operations: {', '.join(failed_types)}")
+        
+        # Overall outcome
+        if execution_result.success:
+            lessons.append("AI diagnostic plan succeeded - automated resolution achieved")
+        elif execution_result.escalation_required:
+            lessons.append("AI diagnostic plan requires human intervention")
+        else:
+            lessons.append("AI diagnostic plan partially successful")
+        
+        # AI confidence correlation
+        if ai_decision.confidence > 0.8 and execution_result.success:
+            lessons.append("High AI confidence correlated with successful resolution")
+        elif ai_decision.confidence < 0.5 and not execution_result.success:
+            lessons.append("Low AI confidence correlated with resolution difficulties")
+        
+        return lessons
+    
     def _create_execution_summary(self, execution_result: PlanExecutionResult) -> Dict:
-        """Create summary of execution results."""
+        """Create comprehensive summary of execution results."""
+        operation_stats = {}
+        for op in execution_result.executed_operations:
+            op_type = op.get('operation', 'unknown')
+            if op_type not in operation_stats:
+                operation_stats[op_type] = {'total': 0, 'successful': 0, 'failed': 0}
+            
+            operation_stats[op_type]['total'] += 1
+            if op.get('success', False):
+                operation_stats[op_type]['successful'] += 1
+            else:
+                operation_stats[op_type]['failed'] += 1
+        
         return {
-            "total_actions": len(execution_result.actions_executed),
-            "successful_actions": sum(1 for action in execution_result.actions_executed if action.success),
-            "failed_actions": sum(1 for action in execution_result.actions_executed if not action.success),
-            "execution_time": execution_result.total_duration,
-            "action_types": [action.action_type for action in execution_result.actions_executed],
-            "final_success": execution_result.success,
-            "escalation_needed": execution_result.escalation_required
+            "plan_type": execution_result.plan_type,
+            "phases_completed": execution_result.phases_completed,
+            "total_phases": execution_result.total_phases,
+            "total_operations": len(execution_result.executed_operations),
+            "successful_operations": sum(1 for op in execution_result.executed_operations if op.get('success', False)),
+            "failed_operations": sum(1 for op in execution_result.executed_operations if not op.get('success', True)),
+            "execution_time": execution_result.duration_seconds,
+            "final_status": execution_result.final_status,
+            "escalation_required": execution_result.escalation_required,
+            "operation_statistics": operation_stats,
+            "metadata": execution_result.metadata,
+            "operations_executed": [
+                {
+                    "operation": op.get('operation', 'unknown'),
+                    "target": op.get('target', 'unknown'),
+                    "success": op.get('success', False),
+                    "duration": op.get('duration_seconds', 0),
+                    "phase": op.get('phase', 'unknown'),
+                    "reasoning": op.get('reasoning', 'No reasoning provided')
+                }
+                for op in execution_result.executed_operations
+            ]
         }
 
 
@@ -176,7 +219,7 @@ class RecoveryService:
         self.ai_recovery = PureAIRecoveryService()
         self.logger = logging.getLogger(__name__)
         
-        self.logger.warning("⚠️ Old RecoveryService is deprecated - using pure AI recovery")
+        self.logger.info("🔄 Recovery Service using intelligent AI diagnostics")
     
     async def execute_recovery(self, alert_data: Dict) -> Dict:
         """Execute recovery using AI system.
@@ -194,13 +237,19 @@ class RecoveryService:
             "success": ai_result.success,
             "alert_name": ai_result.alert_name,
             "service_name": ai_result.service_name,
-            "steps_executed": [{"action": "ai_driven_recovery", "success": ai_result.success}],
+            "steps_executed": [
+                {
+                    "action": f"intelligent_diagnostics_{ai_result.execution_details.get('plan_type', 'unknown')}", 
+                    "success": ai_result.success,
+                    "details": ai_result.execution_details
+                }
+            ],
             "duration_seconds": ai_result.duration_seconds,
-            "error_message": None if ai_result.success else "AI recovery failed",
+            "error_message": None if ai_result.success else "AI intelligent diagnostics required escalation",
             "recommendations": ai_result.lessons_learned,
-            "metrics": {
-                "ai_confidence": ai_result.confidence,
-                "actions_executed": ai_result.actions_executed,
-                "escalation_required": ai_result.escalation_required
-            }
+            "escalation_required": ai_result.escalation_required,
+            "ai_analysis": ai_result.ai_analysis,
+            "root_cause": ai_result.root_cause,
+            "ai_decision": ai_result.ai_decision,
+            "confidence": ai_result.confidence
         } 

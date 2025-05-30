@@ -1,381 +1,455 @@
-# Technical Context - Market Programmer Agent
+# DevOps AI Agent - Technical Context
 
-## Technology Stack
+## Technology Stack: Universal Infrastructure Command Interface (UICI)
 
-### Core Technologies
-- **Language**: Python 3.9+
-- **Web Framework**: FastAPI 0.104+
-- **AI Framework**: LangChain 0.1.0+
-- **LLM Integration**: OpenAI GPT-4 (primary), Anthropic Claude (backup)
-- **HTTP Client**: httpx (for external API calls)
-- **Async Framework**: asyncio with background task management
+### Core Innovation Stack
+The DevOps AI Agent leverages a revolutionary technology stack designed for intelligent, environment-agnostic infrastructure management.
 
-### AI/LLM Dependencies
-- **LangChain**: Core agent framework and LLM orchestration
-- **OpenAI**: GPT-4 for analysis and code generation
-- **LangChain Tools**: Memory, agents, chains, and tool integration
-- **Prompt Templates**: Structured prompt management and versioning
-- **Vector Stores**: For future knowledge base implementation
+## Primary Technologies
 
-### External Service Integration
-- **Prometheus Client**: prometheus-client for metrics scraping
-- **GitHub API**: PyGithub for repository and PR management
-- **Docker API**: docker-py for testing environment management
-- **HTTP Monitoring**: httpx for service health monitoring
+### 1. AI & LLM Integration
+**LLM Provider**: Configurable (OpenAI, Anthropic, etc.)
+- **Model**: `gpt-4.1-nano-2025-04-14` (from infrastructure/config/platform.yml)
+- **Temperature**: `0.1` (precise, consistent responses)
+- **Max Tokens**: `4000` (detailed diagnostic plans)
+- **Timeout**: `60s` (reliable response timing)
+- **Integration**: Direct OpenAI API integration (no LangChain dependency)
 
-### Development Dependencies
-- **Testing**: pytest, pytest-asyncio, pytest-mock
-- **Code Quality**: black, isort, flake8, mypy
-- **Documentation**: FastAPI auto-docs (OpenAPI/Swagger)
-- **Development Server**: uvicorn with reload
+**Configuration Principle**: NO HARDCODING! All LLM settings from configuration files.
 
-### Deployment Technologies
-- **Containerization**: Docker
-- **Base Image**: python:3.9-slim
-- **Process Manager**: Uvicorn + background async tasks
-- **Port**: 8001 (configurable, different from market-predictor)
+```python
+# ❌ NEVER DO THIS
+llm_model = "gpt-4"
 
-## Development Setup
+# ✅ ALWAYS DO THIS  
+config = UniversalConfigLoader()
+llm_model = config.get_llm_config()["model"]
+```
 
-### Prerequisites
-- Python 3.9 or higher
-- Docker (for containerized deployment and testing environments)
-- Git (for version control and GitHub integration)
-- OpenAI API key (for LLM integration)
-- GitHub personal access token (for repository access)
+### 2. Web Framework & API
+**FastAPI** - Modern async web framework
+- **Async Support**: Full async/await patterns for concurrent operations
+- **API Documentation**: Auto-generated OpenAPI/Swagger documentation
+- **Type Safety**: Pydantic models for request/response validation
+- **Health Endpoints**: `/health`, `/metrics` for monitoring integration
+- **WebSocket Support**: Real-time monitoring and status updates
 
-### Local Development Environment
+### 3. Universal Infrastructure Interface
+**Core Components**:
+- **UniversalConfigLoader**: Centralized configuration management
+- **OperationRegistry**: Dynamic operation discovery and validation
+- **EnvironmentExecutor**: Environment-specific command execution
+- **CommandTranslator**: Universal → environment-specific translation
+
+**Environment Support**:
+- **Local Docker**: Docker Python SDK integration
+- **Oracle Cloud Infrastructure (OCI)**: OCI Python SDK
+- **Kubernetes**: kubectl and Python kubernetes client
+- **Future**: AWS ECS, Azure Container Instances, Google Cloud Run
+
+### 4. Configuration Management
+**Configuration File Structure**:
+```
+infrastructure/config/
+├── platform.yml              # Global platform settings, LLM config
+├── agents.yml                # Agent-specific configurations
+├── environments.yml          # Environment definitions & capabilities
+├── operations.yml            # Operation schemas & parameters  
+└── command_translations.yml  # Environment-specific mappings
+```
+
+**Configuration Loader Architecture**:
+```python
+class UniversalConfigLoader:
+    """Load all configurations from infrastructure/config/"""
+    
+    def __init__(self):
+        self.base_path = Path("/config")
+        self.platform_config = self._load_yaml("platform.yml")
+        self.environment_config = self._load_yaml("environments.yml")
+        self.operations_config = self._load_yaml("operations.yml")
+    
+    def get_llm_config(self):
+        return self.platform_config["credentials"]["llm"]
+    
+    def get_current_environment(self):
+        return self.platform_config["platform"]["environment"]
+```
+
+### 5. Monitoring & Observability
+**Prometheus Integration**:
+- **Metrics Collection**: Custom metrics for operation execution
+- **Alert Rules**: Infrastructure health monitoring
+- **Grafana Dashboards**: Visual monitoring and alerting
+
+**Loki Integration**:
+- **Log Aggregation**: Centralized log collection and analysis
+- **Structured Logging**: JSON-formatted logs for analysis
+- **Log Analysis**: AI-powered log pattern recognition
+
+**Alertmanager Integration**:
+- **Webhook Reception**: Receives alerts from Alertmanager
+- **Alert Processing**: AI analysis of alert context and severity
+- **Recovery Orchestration**: Automated response to infrastructure alerts
+
+### 6. Containerization & Deployment
+**Docker**:
+- **Multi-stage Build**: Optimized container images
+- **Health Checks**: Container health monitoring
+- **Security**: Non-root user, minimal attack surface
+- **Configuration Mounting**: External config files mounted at runtime
+
+**Docker Compose**:
+- **Service Orchestration**: Multi-service deployment
+- **Environment Variables**: Minimal environment configuration
+- **Volume Management**: Configuration and data persistence
+- **Network Configuration**: Service communication setup
+
+## Architecture Patterns
+
+### 1. Configuration-Driven Everything
+**Principle**: All behavior driven by configuration files, zero hardcoding
+
+```python
+class ConfigurationDrivenPattern:
+    def __init__(self):
+        # Load ALL configuration from files
+        self.config = UniversalConfigLoader()
+        self.llm_config = self.config.get_llm_config()
+        self.environment = self.config.get_current_environment()
+        self.operations = self.config.get_available_operations()
+    
+    # All values come from configuration
+    def create_llm_client(self):
+        return openai.AsyncOpenAI(
+            api_key=self.llm_config["api_key"],
+            timeout=self.llm_config["timeout"]
+        )
+```
+
+### 2. Environment Abstraction Layer
+**Principle**: Same operations work across any environment through intelligent translation
+
+```python
+class EnvironmentAbstractionPattern:
+    """Universal operation execution across environments"""
+    
+    async def execute_operation(self, operation):
+        """Same operation works in Docker, Oracle Cloud, Kubernetes"""
+        
+        # Universal operation definition
+        universal_op = {
+            "name": "get_logs",
+            "parameters": {
+                "target": "market-predictor",
+                "lines": 100,
+                "level": "error"
+            }
+        }
+        
+        # Environment-specific translation
+        executor = self.get_environment_executor()
+        return await executor.execute(universal_op)
+```
+
+### 3. AI-Driven Dynamic Operations
+**Principle**: AI generates operations based on context, not limited to predefined actions
+
+```python
+class DynamicOperationPattern:
+    """AI generates operations based on problem context"""
+    
+    async def create_diagnostic_plan(self, context):
+        """AI creates context-aware diagnostic sequence"""
+        
+        prompt = f"""
+        You are a Senior Site Reliability Engineer.
+        
+        ## INCIDENT CONTEXT
+        Service: {context['service']}
+        Environment: {context['environment']}
+        Alert: {context['alert']}
+        
+        ## AVAILABLE OPERATIONS
+        {self._format_operations(context['available_operations'])}
+        
+        Generate a systematic diagnostic plan with phases:
+        1. IMMEDIATE TRIAGE (0-2 min)
+        2. PROBLEM ISOLATION (2-5 min)
+        3. ROOT CAUSE ANALYSIS (5-10 min)
+        4. RESOLUTION & VALIDATION (10+ min)
+        """
+        
+        response = await self.llm_client.chat.completions.create(
+            model=self.llm_config["model"],
+            messages=[{"role": "system", "content": prompt}]
+        )
+        
+        return self._parse_operations(response.choices[0].message.content)
+```
+
+### 4. Fail-Fast Configuration
+**Principle**: Application fails immediately if configuration is incomplete
+
+```python
+class FailFastPattern:
+    def __init__(self):
+        try:
+            self.config = UniversalConfigLoader()
+            self._validate_configuration()
+        except Exception as e:
+            raise RuntimeError(f"❌ CRITICAL: Cannot start without configuration: {e}")
+    
+    def _validate_configuration(self):
+        required = ["llm_provider", "llm_model", "environment"]
+        missing = [key for key in required if not self.config.get(key)]
+        if missing:
+            raise ValueError(f"Missing required configuration: {missing}")
+```
+
+## Environment-Specific Integration
+
+### 1. Local Docker Environment
+**Technologies**:
+- **Docker Python SDK**: Native Python integration with Docker Engine
+- **Docker Compose**: Multi-service orchestration
+- **Docker Socket**: Container management via `/var/run/docker.sock`
+
+**Operation Translation**:
+```python
+class DockerExecutor:
+    async def execute(self, operation):
+        if operation["name"] == "get_logs":
+            return await self._docker_logs(operation["parameters"])
+        elif operation["name"] == "restart_service":
+            return await self._docker_restart(operation["parameters"])
+    
+    async def _docker_logs(self, params):
+        container = self.docker_client.containers.get(params["target"])
+        logs = container.logs(
+            tail=params.get("lines", 100),
+            since=params.get("since"),
+            timestamps=params.get("timestamps", True)
+        )
+        return {"output": logs.decode(), "success": True}
+```
+
+### 2. Oracle Cloud Infrastructure (OCI)
+**Technologies**:
+- **OCI Python SDK**: Official Oracle Cloud SDK
+- **OCI CLI**: Command-line interface for complex operations
+- **Container Instances**: OCI container services
+- **Logging Service**: Centralized log management
+
+**Operation Translation**:
+```python
+class OCIExecutor:
+    async def execute(self, operation):
+        if operation["name"] == "get_logs":
+            return await self._oci_logs(operation["parameters"])
+        elif operation["name"] == "restart_service":
+            return await self._oci_restart(operation["parameters"])
+    
+    async def _oci_logs(self, params):
+        logs_client = oci.logging.LoggingManagementClient(self.config)
+        response = logs_client.search_logs(
+            search_logs_details=oci.logging.models.SearchLogsDetails(
+                time_start=params.get("since"),
+                time_end=datetime.now(),
+                search_query=f"logContent='{params.get('filter', '')}'"
+            )
+        )
+        return {"output": response.data, "success": True}
+```
+
+### 3. Kubernetes
+**Technologies**:
+- **kubectl**: Command-line tool for Kubernetes
+- **Python Kubernetes Client**: Official Kubernetes Python library
+- **Helm**: Package management for Kubernetes
+- **Custom Resource Definitions**: Extended Kubernetes functionality
+
+**Operation Translation**:
+```python
+class KubernetesExecutor:
+    async def execute(self, operation):
+        if operation["name"] == "get_logs":
+            return await self._k8s_logs(operation["parameters"])
+        elif operation["name"] == "restart_service":
+            return await self._k8s_restart(operation["parameters"])
+    
+    async def _k8s_logs(self, params):
+        v1 = kubernetes.client.CoreV1Api()
+        pod_list = v1.list_namespaced_pod(
+            namespace="default",
+            label_selector=f"app={params['target']}"
+        )
+        
+        logs = []
+        for pod in pod_list.items:
+            pod_logs = v1.read_namespaced_pod_log(
+                name=pod.metadata.name,
+                namespace="default",
+                tail_lines=params.get("lines", 100)
+            )
+            logs.append(pod_logs)
+        
+        return {"output": "\n".join(logs), "success": True}
+```
+
+## Development Environment
+
+### 1. Local Development Setup
+**Requirements**:
+- Python 3.9+
+- Docker Desktop
+- Virtual Environment (venv)
+- Infrastructure configuration files
+
+**Development Workflow**:
 ```bash
-# Clone repository
-git clone <repository-url>
-cd market-programmer-agent
-
-# Create virtual environment
+# Setup virtual environment
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Install development dependencies
-pip install -r requirements-dev.txt
-
-# Set up environment variables
-cp .env.example .env
-# Edit .env with your API keys and configuration
+# Configure environment
+export AGENTS_CONFIG="/path/to/infrastructure/config/agents.yml"
 
 # Run development server
 uvicorn src.agent.main:app --reload --host 0.0.0.0 --port 8001
 ```
 
-### Environment Configuration
-```bash
-# .env file for local development
-ENVIRONMENT=development
-LOG_LEVEL=DEBUG
-API_HOST=0.0.0.0
-API_PORT=8001
+### 2. Testing Environment
+**Testing Stack**:
+- **pytest**: Test framework with async support
+- **pytest-asyncio**: Async test support
+- **httpx**: Async HTTP client for testing
+- **Docker SDK**: Container management for integration tests
 
-# LLM Configuration
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=...
-LLM_PROVIDER=openai
-LLM_MODEL=gpt-4
-LLM_TEMPERATURE=0.1
+**Test Categories**:
+- **Unit Tests**: Individual component testing
+- **Integration Tests**: Service integration testing
+- **Environment Tests**: Cross-environment operation testing
+- **AI Reasoning Tests**: LLM response validation
 
-# External Service Configuration
-MARKET_PREDICTOR_URL=http://localhost:8000
-PROMETHEUS_URL=http://localhost:9090
-LOKI_URL=http://localhost:3100
+### 3. Production Deployment
+**Container Orchestration**:
+- **Docker Compose**: Multi-service deployment
+- **Health Checks**: Container and application health monitoring
+- **Volume Management**: Configuration and data persistence
+- **Network Security**: Service isolation and communication
 
-# GitHub Integration
-GITHUB_TOKEN=ghp_...
-GITHUB_REPOSITORY=owner/repo-name
-ALLOWED_REPOSITORIES=owner/market-predictor,owner/market-programmer-agent
+**Configuration Management**:
+- **External Configs**: Configuration files mounted from host
+- **Environment Detection**: Auto-detect deployment environment
+- **Secret Management**: Secure handling of API keys and credentials
 
-# Monitoring Configuration
-MONITORING_INTERVAL=30
-HEALTH_CHECK_TIMEOUT=10
-METRICS_CACHE_TTL=60
-```
+## Performance & Scalability
 
-### Docker Development
-```bash
-# Build development image
-docker build -f docker/Dockerfile.dev -t market-programmer-agent:dev .
+### 1. Async Architecture
+**FastAPI + asyncio**:
+- **Non-blocking I/O**: Concurrent request handling
+- **Connection Pooling**: Efficient resource utilization
+- **Background Tasks**: Async background processing
+- **WebSocket Support**: Real-time communication
 
-# Run development container
-docker run -p 8001:8001 --env-file .env market-programmer-agent:dev
+### 2. Caching Strategy
+**Configuration Caching**:
+- **In-Memory Cache**: Fast configuration access
+- **TTL-based Refresh**: Automatic cache invalidation
+- **Fallback Mechanism**: Graceful degradation on cache miss
 
-# Run with docker-compose (includes testing environment)
-docker-compose -f docker/docker-compose.dev.yml up
-```
+**AI Response Caching**:
+- **Operation Result Cache**: Cache common operation results
+- **Context-based Cache**: Cache based on problem context
+- **Cache Invalidation**: Smart cache invalidation strategies
 
-## Dependencies
+### 3. Resource Management
+**Memory Management**:
+- **Connection Pooling**: Efficient connection reuse
+- **Garbage Collection**: Proper resource cleanup
+- **Memory Limits**: Container memory constraints
 
-### Core Production Dependencies
-```
-# Web Framework
-fastapi>=0.104.0
-uvicorn[standard]>=0.24.0
-pydantic>=2.0.0
-pydantic-settings>=2.0.0
+**CPU Optimization**:
+- **Async Processing**: Non-blocking operation execution
+- **Background Workers**: CPU-intensive tasks in background
+- **Process Optimization**: Efficient algorithm implementation
 
-# AI/LLM Framework
-langchain>=0.1.0
-openai>=1.0.0
-anthropic>=0.7.0
+## Security Considerations
 
-# External Service Integration
-httpx>=0.25.0
-prometheus-client>=0.17.0
-PyGithub>=1.59.0
-docker>=6.1.0
+### 1. Container Security
+**Security Practices**:
+- **Non-root User**: Run container as non-privileged user
+- **Minimal Base Image**: Reduce attack surface
+- **Security Scanning**: Regular vulnerability assessment
+- **Network Isolation**: Service communication security
 
-# Utilities
-python-multipart>=0.0.6
-python-dotenv>=1.0.0
-asyncio>=3.4.3
-```
+### 2. API Security
+**Authentication & Authorization**:
+- **API Key Management**: Secure API key handling
+- **Rate Limiting**: Request rate limiting
+- **Input Validation**: Comprehensive input sanitization
+- **Audit Logging**: Complete operation audit trail
 
-### Development Dependencies
-```
-# Testing Framework
-pytest>=7.4.0
-pytest-asyncio>=0.21.0
-pytest-mock>=3.11.0
-httpx>=0.25.0
+### 3. Configuration Security
+**Secret Management**:
+- **Environment Variables**: Secure secret injection
+- **File Permissions**: Restrictive configuration file permissions
+- **Encryption**: Sensitive data encryption at rest
+- **Access Control**: Limited configuration access
 
-# Code Quality
-black>=23.0.0
-isort>=5.12.0
-flake8>=6.0.0
-mypy>=1.5.0
-pre-commit>=3.4.0
+## Integration Technologies
 
-# Development Tools
-jupyter>=1.0.0  # For LLM experimentation
-langchain-experimental>=0.0.40  # For advanced agent features
-```
+### 1. Monitoring Integration
+**Prometheus**:
+- **Custom Metrics**: Operation execution metrics
+- **Health Metrics**: Application health indicators
+- **Performance Metrics**: Response time and throughput
 
-### Optional Dependencies
-```
-# Advanced Monitoring
-grafana-api>=1.0.3
-elasticsearch>=8.0.0
+**Grafana**:
+- **Dashboards**: Visual monitoring interfaces
+- **Alerting**: Visual alert management
+- **Data Visualization**: Performance and health visualization
 
-# Database (for future knowledge persistence)
-sqlalchemy>=2.0.0
-alembic>=1.12.0
+### 2. Logging Integration
+**Structured Logging**:
+- **JSON Format**: Machine-readable log format
+- **Correlation IDs**: Request tracing across services
+- **Log Levels**: Appropriate log level usage
+- **Performance Logging**: Operation performance tracking
 
-# Vector Database (for knowledge base)
-chromadb>=0.4.0
-faiss-cpu>=1.7.4
-```
+**Loki Integration**:
+- **Log Aggregation**: Centralized log collection
+- **Log Analysis**: Pattern recognition and analysis
+- **Alert Generation**: Log-based alerting
 
-## Technical Constraints
+## Future Technology Roadmap
 
-### Performance Requirements
-- **Monitoring Loop**: Complete cycle every 30 seconds (configurable)
-- **LLM Response Time**: < 30 seconds for analysis (with timeout)
-- **API Response Time**: < 5 seconds for health/status endpoints
-- **Memory Usage**: < 1GB under normal operation (excluding LLM context)
+### Phase 1: Foundation (Current)
+- **Configuration Management**: Universal configuration loading
+- **Environment Abstraction**: Docker, OCI, Kubernetes support
+- **AI Integration**: GPT-4 powered diagnostic reasoning
+- **Basic Operations**: Restart, logs, resource monitoring
 
-### AI/LLM Constraints
-- **Token Limits**: Respect OpenAI/Anthropic token limits per request
-- **Rate Limiting**: Handle API rate limits gracefully with backoff
-- **Context Management**: Maintain conversation context within token limits
-- **Cost Management**: Monitor and limit LLM usage costs
+### Phase 2: Intelligence Enhancement (Next 3 months)
+- **Machine Learning**: Pattern recognition and learning
+- **Predictive Analytics**: Problem prediction capabilities
+- **Advanced Operations**: Complex multi-service operations
+- **Performance Optimization**: Intelligent resource management
 
-### Security Requirements
-- **API Key Management**: Secure storage and rotation of API keys
-- **Repository Access**: Limited to explicitly allowed repositories
-- **Sandbox Isolation**: All testing in isolated environments
-- **Input Sanitization**: Validate all LLM inputs and outputs
+### Phase 3: Platform Expansion (Next 6 months)
+- **Cloud Provider Integration**: AWS, Azure, GCP support
+- **Kubernetes Operators**: Custom Kubernetes controllers
+- **Service Mesh Integration**: Istio, Linkerd support
+- **Advanced Security**: Security scanning and compliance
 
-### Integration Constraints
-- **Service Dependencies**: Graceful handling of external service failures
-- **Network Timeouts**: Appropriate timeouts for all external calls
-- **Retry Logic**: Exponential backoff for transient failures
-- **Circuit Breakers**: Prevent cascade failures
+### Phase 4: Ecosystem Integration (Next 12 months)
+- **CI/CD Integration**: Jenkins, GitLab CI, GitHub Actions
+- **Database Management**: Database operation automation
+- **Cost Optimization**: Intelligent resource cost management
+- **Compliance Automation**: Automated compliance checking
 
-## Development Workflow
-
-### Code Quality Standards
-```bash
-# Pre-commit hooks (includes LLM prompt validation)
-pre-commit install
-
-# Code formatting
-black src/ tests/
-isort src/ tests/
-
-# Type checking (with LangChain compatibility)
-mypy src/ --ignore-missing-imports
-
-# Linting
-flake8 src/ tests/
-
-# Testing (with LLM mocking)
-pytest tests/ -v --cov=src --cov-report=html
-```
-
-### AI Development Workflow
-```bash
-# Test LLM prompts in Jupyter notebook
-jupyter notebook notebooks/
-
-# Validate prompt templates
-python scripts/validate_prompts.py
-
-# Test agent workflows with mock LLM
-pytest tests/agents/ -k "test_agent_workflow"
-
-# Integration test with real LLM (expensive)
-pytest tests/integration/ -m "llm_integration" --slow
-```
-
-### Testing Strategy
-```
-tests/
-├── unit/              # Unit tests for individual components
-│   ├── services/      # Service layer tests
-│   ├── agents/        # Agent tests with mocked LLM
-│   └── models/        # Data model tests
-├── integration/       # Integration tests
-│   ├── api/           # FastAPI endpoint tests
-│   ├── external/      # External service integration
-│   └── llm/           # LLM integration tests (marked as slow)
-├── fixtures/          # Test data and fixtures
-└── mocks/             # LLM and external service mocks
-```
-
-## Configuration Management
-
-### Environment Variables
-```python
-class Settings(BaseSettings):
-    # Application settings
-    environment: str = "development"
-    log_level: str = "INFO"
-    api_host: str = "0.0.0.0"
-    api_port: int = 8001
-    
-    # LLM settings
-    openai_api_key: Optional[str] = None
-    anthropic_api_key: Optional[str] = None
-    llm_provider: str = "openai"
-    llm_model: str = "gpt-4"
-    llm_temperature: float = 0.1
-    llm_max_tokens: int = 4000
-    
-    # External service settings
-    market_predictor_url: str = "http://localhost:8000"
-    prometheus_url: Optional[str] = None
-    loki_url: Optional[str] = None
-    
-    # GitHub settings
-    github_token: Optional[str] = None
-    github_repository: Optional[str] = None
-    allowed_repositories: List[str] = []
-    
-    # Monitoring settings
-    monitoring_interval: int = 30
-    health_check_timeout: int = 10
-    metrics_cache_ttl: int = 60
-    
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
-```
-
-### LLM Prompt Management
-```python
-class PromptTemplates:
-    ANALYSIS_PROMPT = """
-    You are an expert system administrator analyzing a service issue.
-    
-    Service: Market Predictor
-    Issue Type: {issue_type}
-    
-    Monitoring Data:
-    {monitoring_data}
-    
-    Please analyze this issue and provide:
-    1. Root cause analysis
-    2. Severity assessment
-    3. Recommended actions
-    4. Risk assessment for proposed changes
-    
-    Format your response as JSON with these fields:
-    {{
-        "root_cause": "...",
-        "severity": "low|medium|high|critical",
-        "recommended_actions": [...],
-        "risk_assessment": "..."
-    }}
-    """
-    
-    CODE_GENERATION_PROMPT = """
-    You are an expert software engineer creating a fix for an issue.
-    
-    Issue: {issue_description}
-    Root Cause: {root_cause}
-    Target: {target_file}
-    
-    Generate Python code to fix this issue following these constraints:
-    - Use FastAPI patterns
-    - Include proper error handling
-    - Add appropriate logging
-    - Follow existing code style
-    
-    Provide the complete code changes needed.
-    """
-```
-
-## Integration Points
-
-### External API Integrations
-- **Market Predictor**: HTTP client for health, status, metrics
-- **Prometheus**: PromQL queries for metrics analysis
-- **Loki**: LogQL queries for log analysis
-- **GitHub API**: Repository operations, PR management
-- **OpenAI/Anthropic**: LLM analysis and code generation
-
-### Service Discovery
-- **Health Endpoints**: For monitoring agent health
-- **Status Endpoints**: For detailed agent status and activity
-- **Webhook Endpoints**: For external alerts and triggers
-- **Manual Control**: Endpoints for human oversight and intervention
-
-### Monitoring Integration
-- **Self-Monitoring**: Agent monitors its own performance
-- **Target Monitoring**: Monitors market-predictor service
-- **Metrics Exposure**: Exposes metrics about agent operations
-- **Log Integration**: Structured logging for analysis
-
-## Future Technical Considerations
-
-### Scalability Improvements
-- **Multi-Target Monitoring**: Support multiple services beyond market-predictor
-- **Distributed Agents**: Multiple agent instances with coordination
-- **Knowledge Persistence**: Database for learning and historical data
-- **Advanced Analytics**: More sophisticated pattern detection
-
-### AI/LLM Enhancements
-- **Multi-Model Support**: Use different LLMs for different tasks
-- **Fine-Tuned Models**: Custom models trained on specific use cases
-- **Vector Knowledge Base**: Semantic search for historical solutions
-- **Reinforcement Learning**: Learn from action outcomes
-
-### Advanced Features
-- **Predictive Analysis**: Predict issues before they occur
-- **Automated Testing**: Generate and run tests for changes
-- **Code Review**: Automated code review before PR creation
-- **Performance Optimization**: Continuous performance improvement
-
-### Security Enhancements
-- **Zero-Trust Architecture**: Verify all external interactions
-- **Encrypted Communication**: Secure all external API calls
-- **Audit Logging**: Complete audit trail of all agent actions
-- **Access Control**: Fine-grained permissions for agent operations 
+This technical architecture enables the Universal Infrastructure Command Interface to provide intelligent, environment-agnostic infrastructure management while maintaining security, performance, and scalability across any deployment environment. 

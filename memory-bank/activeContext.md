@@ -1,5 +1,242 @@
 # Active Context - DevOps AI Agent
 
+## Current Focus: Universal Infrastructure Command Interface (UICI) Implementation
+
+### Primary Objective
+Transform the DevOps AI Agent from hardcoded, Docker-specific operations to a revolutionary Universal Infrastructure Command Interface that works seamlessly across any environment (local Docker, Oracle Cloud, Kubernetes, etc.).
+
+## Immediate Issues Resolved
+
+### ✅ Configuration Management Breakthrough
+**Problem Solved**: Eliminated dual-configuration issue where both `agents.yml` and `docker-compose.yml` contained LLM settings, causing environment variable precedence conflicts.
+
+**Solution Implemented**:
+- Removed all hardcoded LLM environment variables from docker-compose.yml
+- Created `AgentsConfigLoader` classes for both agents
+- Implemented fail-fast mechanism for missing configuration
+- Established `agents.yml` as single source of truth
+- Both agents now successfully read LLM config from agents.yml
+
+**Current LLM Configuration**:
+- DevOps AI Agent: `gpt-4.1-nano-2025-04-14` (from agents.yml)
+- Coding AI Agent: `gpt-4.1-nano-2025-04-14` (from agents.yml)
+
+### 🚨 Current Critical Issue: Docker CLI Missing
+**Problem**: DevOps AI agent experiences Docker command execution failures:
+```
+Error: /bin/sh: 1: docker: not found
+🚨 AI recommends escalating to human intervention
+❌ AI Recovery failed for MarketPredictorDown
+```
+
+**Root Cause**: The Dockerfile doesn't install Docker CLI tools, but AI executor tries to run shell commands like:
+```bash
+docker-compose up -d --force-recreate market-predictor
+```
+
+**Impact**: AI agent can detect problems and generate intelligent recovery plans but fails at execution phase.
+
+## Revolutionary Solution in Development: UICI
+
+### Core Innovation
+Instead of fixing Docker CLI installation (band-aid solution), we're implementing a paradigm shift to environment-agnostic infrastructure management.
+
+### UICI Architecture Overview
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   AI Reasoning  │───▶│  Universal UICI  │───▶│   Environment   │
+│    Engine       │    │   Interface      │    │   Executors     │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+                                │                        │
+                                ▼                        ▼
+                       ┌──────────────────┐    ┌─────────────────┐
+                       │  Configuration   │    │ Docker/OCI/K8s  │
+                       │   Management     │    │   Commands      │
+                       └──────────────────┘    └─────────────────┘
+```
+
+### Key Benefits
+1. **Environment Agnostic**: Same operations work in Docker, Oracle Cloud, Kubernetes
+2. **No Hardcoded Operations**: AI generates any operation dynamically
+3. **Configuration-Driven**: All settings from `infrastructure/config/`
+4. **Unlimited AI Creativity**: Execute any diagnostic or remediation command
+
+## Current Implementation Status
+
+### 📋 UICI Implementation Phases (6 Weeks)
+
+#### **Phase 1: Configuration Centralization** (Week 1) - IN PROGRESS
+**Goal**: Eliminate all hardcoded configurations
+- ✅ Created comprehensive documentation (UNIVERSAL_INFRASTRUCTURE_INTERFACE.md)
+- ✅ Existing `AgentsConfigLoader` provides foundation
+- 🔧 Need to extend to `UniversalConfigLoader` for platform-wide configs
+- 🔧 Create `infrastructure/config/platform.yml` for LLM and global settings
+- 🔧 Create `infrastructure/config/environments.yml` for environment definitions
+
+#### **Phase 2: Universal Operation Interface** (Week 2) - PLANNED
+**Goal**: Replace hardcoded methods with dynamic operations
+- 🎯 Implement `OperationRegistry` for dynamic operation discovery
+- 🎯 Create `UniversalInfrastructureInterface` for environment-agnostic execution
+- 🎯 Build parameter validation and operation routing system
+
+#### **Phase 3: Environment Executors** (Week 3) - PLANNED
+**Goal**: Implement environment-specific command execution
+- 🎯 `DockerExecutor`: Local Docker command execution
+- 🎯 `OCIExecutor`: Oracle Cloud API integration
+- 🎯 `KubernetesExecutor`: Kubernetes command execution
+- 🎯 `CommandTranslator`: Universal → environment-specific translation
+
+#### **Phase 4: AI Intelligence Engine** (Week 4) - PLANNED
+**Goal**: Implement sophisticated AI reasoning
+- 🎯 Enhanced AI context generation with environment awareness
+- 🎯 Multi-phase diagnostic planning (Triage → Analysis → Resolution)
+- 🎯 Creative command generation based on problem context
+- 🎯 Learning from successful problem resolutions
+
+#### **Phase 5: Operation Configuration** (Week 5) - PLANNED
+**Goal**: Externalize all operation definitions
+- 🎯 Create `infrastructure/config/operations.yml` with operation schemas
+- 🎯 Create `infrastructure/config/command_translations.yml` for environment mappings
+- 🎯 Remove all hardcoded operation logic from code
+
+#### **Phase 6: Testing & Validation** (Week 6) - PLANNED
+**Goal**: Comprehensive testing across environments
+- 🎯 Test framework for operation execution validation
+- 🎯 Environment migration tests
+- 🎯 AI reasoning validation
+- 🎯 End-to-end integration testing
+
+## Current Architecture State
+
+### ✅ Working Components
+- **Monitoring & Alerting**: Successfully receives Alertmanager webhooks
+- **AI Analysis**: LLM-powered problem analysis and decision making
+- **Health Monitoring**: Service health checks and status reporting
+- **Configuration Management**: Agents read LLM config from agents.yml
+
+### 🚨 Broken Components
+- **Command Execution**: Docker CLI missing in container
+- **Service Recovery**: Cannot execute restart commands
+- **Infrastructure Actions**: Limited to analysis only
+
+### 🔧 Components Under Development
+- **Universal Operation Interface**: Environment-agnostic command execution
+- **Configuration Centralization**: Moving all configs to infrastructure/config/
+- **Multi-Environment Support**: Oracle Cloud, Kubernetes executors
+
+## Configuration Philosophy Evolution
+
+### ❌ OLD: Scattered Configuration
+```python
+# BAD: Hardcoded everywhere
+llm_model = "gpt-4"
+docker_command = "docker restart market-predictor"
+timeout = 30
+```
+
+### ✅ NEW: Centralized Configuration
+```python
+# GOOD: Everything from config
+config = UniversalConfigLoader()
+llm_config = config.get_llm_config()
+operation = config.get_operation_schema("restart_service")
+```
+
+### 🎯 Configuration File Structure
+```
+infrastructure/config/
+├── platform.yml        # Global platform settings, LLM config
+├── agents.yml          # Agent-specific configurations  
+├── environments.yml    # Environment definitions & capabilities
+├── operations.yml      # Operation schemas & parameters
+└── command_translations.yml  # Environment-specific mappings
+```
+
+## Recent Achievements
+
+### ✅ Configuration Management Victory
+- **Solved**: Dual-configuration problem between agents.yml and docker-compose.yml
+- **Result**: Both agents successfully use agents.yml for LLM configuration
+- **Impact**: Single source of truth established, no environment variable conflicts
+
+### ✅ AI Intelligence Functioning
+- **Status**: AI successfully analyzes infrastructure problems
+- **Capability**: Generates intelligent diagnostic and recovery plans
+- **Example**: Correctly identified MarketPredictorDown requires resource check → log analysis → restart
+
+### ✅ Documentation Complete
+- **Created**: Comprehensive UNIVERSAL_INFRASTRUCTURE_INTERFACE.md
+- **Content**: 6-phase implementation plan with detailed code examples
+- **Purpose**: Blueprint for AI agents to implement UICI solution
+
+## Next Actions (Priority Order)
+
+### 🔥 Immediate (This Week)
+1. **Extend Configuration Loader**: Build `UniversalConfigLoader` based on existing `AgentsConfigLoader`
+2. **Create Platform Config**: Add `infrastructure/config/platform.yml` with global settings
+3. **Environment Detection**: Implement auto-detection of current deployment environment
+
+### 🎯 Short Term (Next 2 Weeks)
+1. **Operation Registry**: Implement dynamic operation discovery system
+2. **Universal Interface**: Build environment-agnostic operation execution
+3. **Docker Executor**: Implement Docker-specific command execution (replace CLI approach)
+
+### 🚀 Medium Term (Weeks 3-6)
+1. **Oracle Cloud Integration**: Implement OCI API executor
+2. **AI Intelligence Engine**: Enhanced diagnostic reasoning
+3. **Comprehensive Testing**: Validate across all environments
+
+## Technical Decisions Made
+
+### ✅ Configuration Management
+- **Decision**: Use existing `AgentsConfigLoader` pattern as foundation
+- **Rationale**: Proven to work, eliminates configuration conflicts
+- **Implementation**: Extend to `UniversalConfigLoader` for platform-wide configs
+
+### ✅ Environment Abstraction
+- **Decision**: Build universal operation interface over environment-specific executors
+- **Rationale**: Enables same AI logic to work across Docker, Oracle Cloud, Kubernetes
+- **Implementation**: Operation registry + executor factory pattern
+
+### ✅ No Docker CLI Installation
+- **Decision**: Don't install Docker CLI in container as band-aid fix
+- **Rationale**: UICI approach is more powerful and future-proof
+- **Implementation**: Use Docker Python SDK and universal operation interface
+
+## Key Insights Discovered
+
+### 🎯 Configuration is Everything
+The dual-configuration issue revealed that proper configuration management is the foundation of any scalable system. UICI extends this principle to all infrastructure operations.
+
+### 🎯 AI Needs Unlimited Tools
+Current hardcoded operations (restart, logs, scale) severely limit AI creativity. UICI removes these constraints by enabling dynamic operation generation.
+
+### 🎯 Environment Lock-in is Real
+Docker-specific commands create vendor lock-in. UICI provides true multi-cloud portability.
+
+## Critical Implementation Notes
+
+### 🚫 NEVER HARDCODE ANYTHING
+```python
+# ❌ NEVER DO THIS
+model = "gpt-4"
+timeout = 30
+
+# ✅ ALWAYS DO THIS
+config = UniversalConfigLoader()
+model = config.get_llm_config()["model"]
+timeout = config.get_operation_config("timeout")
+```
+
+### 📁 Configuration File Locations
+- `infrastructure/config/platform.yml` - Platform-wide settings, LLM config
+- `infrastructure/config/agents.yml` - Agent-specific configurations
+- `infrastructure/config/environments.yml` - Environment definitions
+- `infrastructure/config/operations.yml` - Operation schemas
+- `infrastructure/config/command_translations.yml` - Environment mappings
+
+This active context reflects our transition from traditional hardcoded DevOps automation to intelligent, adaptive, multi-environment infrastructure management through the Universal Infrastructure Command Interface.
+
 ## Current Focus: CRITICAL BUG FIX - Bootstrap Paradox RESOLVED ✅
 
 **Status**: Phase 1.3 Infrastructure Monitoring & Recovery COMPLETE WITH BOOTSTRAP PARADOX FIX  
