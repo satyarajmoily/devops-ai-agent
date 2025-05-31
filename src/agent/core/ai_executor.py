@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 from .ai_reasoning import AIAction, AIDecision
 from .universal_interface import UniversalInfrastructureInterface
 from .ai_intelligence.diagnostic_planner import DiagnosticPlanner, DiagnosticPlan
-from .config.universal_config import UniversalConfigLoader
+from ..config.universal_config import UniversalConfigLoader
 from ..config.settings import get_settings
 
 

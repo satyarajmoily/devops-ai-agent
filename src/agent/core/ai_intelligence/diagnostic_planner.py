@@ -11,7 +11,7 @@ from typing import Dict, Any, List, Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
 
-from ..config.universal_config import UniversalConfigLoader
+from ...config.universal_config import UniversalConfigLoader
 
 logger = logging.getLogger(__name__)
 

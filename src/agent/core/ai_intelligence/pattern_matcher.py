@@ -11,7 +11,7 @@ from dataclasses import dataclass, asdict
 from collections import defaultdict
 import re
 
-from ..config.universal_config import UniversalConfigLoader
+from ...config.universal_config import UniversalConfigLoader
 
 logger = logging.getLogger(__name__)
 

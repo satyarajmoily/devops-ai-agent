@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from .diagnostic_planner import DiagnosticStep, DiagnosticPhase, DiagnosticPlan
-from ..config.universal_config import UniversalConfigLoader
+from ...config.universal_config import UniversalConfigLoader
 
 logger = logging.getLogger(__name__)
 

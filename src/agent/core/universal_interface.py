@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Dict, Any, List, Optional
 
 # Import existing components
-from .config.universal_config import UniversalConfigLoader
+from ..config.universal_config import UniversalConfigLoader
 from .operations.operation_registry import OperationRegistry
 from .executors import DockerExecutor, OCIExecutor
 
@@ -117,7 +117,7 @@ class UniversalInfrastructureInterface:
         start_time = datetime.now()
         
         try:
-            result = await self.executor.execute_operation(operation_name, operation.get("parameters", {}))
+            result = await self.executor.execute(operation)
             execution_time = (datetime.now() - start_time).total_seconds()
             
             # Add execution metadata
