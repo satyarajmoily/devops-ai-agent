@@ -63,7 +63,7 @@ class CreativeCommandGenerator:
         try:
             import openai
             self.llm_client = openai.AsyncOpenAI(
-                api_key=self.llm_config["openai_api_key"]
+                api_key=self.llm_config["api_key"]
             )
         except ImportError:
             raise RuntimeError("OpenAI package not available. Install with: pip install openai")
