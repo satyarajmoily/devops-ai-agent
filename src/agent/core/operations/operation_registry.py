@@ -5,7 +5,7 @@ Dynamic registry of available operations loaded from configuration
 
 import logging
 from typing import Dict, Any, List, Optional
-from ..config.universal_config import UniversalConfigLoader
+from ...config.simple_config import get_config
 
 logger = logging.getLogger(__name__)
 
@@ -15,11 +15,11 @@ class OperationRegistry:
     Loads operation definitions from configuration and provides validation
     """
     
-    def __init__(self, config_loader: Optional[UniversalConfigLoader] = None):
+    def __init__(self, config_loader=None):
         """Initialize operation registry with configuration loader"""
-        self.config_loader = config_loader or UniversalConfigLoader()
+        self.config_loader = config_loader or get_config()
         self.operations = self._load_operations_from_config()
-        self.current_environment = self.config_loader.get_current_environment()
+        self.current_environment = "docker"  # Default environment
         
         logger.info(
             f"Operation registry initialized with {len(self.operations)} operations "
@@ -28,13 +28,70 @@ class OperationRegistry:
     
     def _load_operations_from_config(self) -> Dict[str, Any]:
         """Load operation definitions from configuration"""
-        try:
-            operations = self.config_loader.operations_config.get("operations", {})
-            logger.debug(f"Loaded {len(operations)} operation definitions from config")
-            return operations
-        except Exception as e:
-            logger.error(f"Failed to load operations from config: {e}")
-            raise RuntimeError(f"Cannot initialize operation registry: {e}")
+        # Simplified operation definitions
+        operations = {
+            "check_resources": {
+                "description": "Check system resource usage",
+                "category": "monitoring",
+                "environments": ["docker", "oci"],
+                "parameters": {
+                    "target": {"type": "string", "required": True},
+                    "metrics": {"type": "array", "default": ["cpu", "memory"]},
+                    "format": {"type": "string", "default": "summary"}
+                }
+            },
+            "get_logs": {
+                "description": "Retrieve service logs",
+                "category": "diagnostic",
+                "environments": ["docker", "oci"],
+                "parameters": {
+                    "target": {"type": "string", "required": True},
+                    "lines": {"type": "integer", "default": 50},
+                    "level": {"type": "string", "default": "all"}
+                }
+            },
+            "health_check": {
+                "description": "Check service health",
+                "category": "monitoring",
+                "environments": ["docker", "oci"],
+                "parameters": {
+                    "target": {"type": "string", "required": True},
+                    "endpoints": {"type": "array", "default": ["/health"]},
+                    "timeout": {"type": "integer", "default": 10}
+                }
+            },
+            "restart_service": {
+                "description": "Restart a service",
+                "category": "management",
+                "environments": ["docker", "oci"],
+                "parameters": {
+                    "target": {"type": "string", "required": True},
+                    "strategy": {"type": "string", "default": "graceful"},
+                    "timeout": {"type": "integer", "default": 60}
+                }
+            },
+            "scale_service": {
+                "description": "Scale a service",
+                "category": "management",
+                "environments": ["docker", "oci"],
+                "parameters": {
+                    "target": {"type": "string", "required": True},
+                    "replicas": {"type": "integer", "required": True},
+                    "strategy": {"type": "string", "default": "gradual"}
+                }
+            },
+            "execute_command": {
+                "description": "Execute a custom command",
+                "category": "diagnostic",
+                "environments": ["docker", "oci"],
+                "parameters": {
+                    "command": {"type": "string", "required": True},
+                    "timeout": {"type": "integer", "default": 30}
+                }
+            }
+        }
+        logger.debug(f"Loaded {len(operations)} operation definitions")
+        return operations
     
     def get_all_operations(self) -> List[str]:
         """Get list of all operation names"""
@@ -44,25 +101,16 @@ class OperationRegistry:
         """Get operations available in specific environment"""
         env = environment or self.current_environment
         
-        try:
-            env_capabilities = self.config_loader.get_environment_capabilities(env)
-            available_ops = []
-            
-            for op_name, op_config in self.operations.items():
-                # Check if operation is supported in this environment
-                op_environments = op_config.get("environments", [])
-                if env in op_environments:
-                    available_ops.append(op_name)
-                # Also check if operation name matches environment capability
-                elif op_name in env_capabilities:
-                    available_ops.append(op_name)
-            
-            logger.debug(f"Environment '{env}' supports {len(available_ops)} operations")
-            return available_ops
-            
-        except Exception as e:
-            logger.error(f"Failed to get available operations for environment '{env}': {e}")
-            return []
+        available_ops = []
+        
+        for op_name, op_config in self.operations.items():
+            # Check if operation is supported in this environment
+            op_environments = op_config.get("environments", [])
+            if env in op_environments:
+                available_ops.append(op_name)
+        
+        logger.debug(f"Environment '{env}' supports {len(available_ops)} operations")
+        return available_ops
     
     def get_operation_config(self, operation_name: str) -> Dict[str, Any]:
         """Get full configuration for specific operation"""

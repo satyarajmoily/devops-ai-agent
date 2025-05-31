@@ -6,7 +6,7 @@ Abstract base class for environment-specific operation executors
 import logging
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List
-from ...config.universal_config import UniversalConfigLoader
+from ...config.simple_config import get_config
 
 logger = logging.getLogger(__name__)
 
@@ -16,11 +16,11 @@ class BaseExecutor(ABC):
     Defines the interface that all executors must implement
     """
     
-    def __init__(self, config: UniversalConfigLoader):
+    def __init__(self, config):
         """Initialize base executor with configuration"""
         self.config = config
-        self.environment = config.get_current_environment()
-        self.environment_type = config.get_environment_type()
+        self.environment = "docker"  # Default environment
+        self.environment_type = "docker"
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         
         self.logger.info(f"Initialized {self.__class__.__name__} for environment: {self.environment}")
@@ -67,27 +67,32 @@ class BaseExecutor(ABC):
     
     def get_command_translation(self, operation_name: str) -> Dict[str, Any]:
         """Get command translation for operation in current environment"""
-        try:
-            return self.config.get_command_translation(self.environment, operation_name)
-        except ValueError as e:
-            self.logger.error(f"No command translation for operation '{operation_name}': {e}")
-            return {}
+        # Simplified - return basic command mapping
+        return {
+            "command": operation_name,
+            "timeout": 60
+        }
     
     def get_environment_limits(self) -> Dict[str, Any]:
         """Get resource limits for current environment"""
-        return self.config.get_environment_limits(self.environment)
+        return {
+            "operation_timeout": 60,
+            "max_concurrent_operations": 5,
+            "memory_limit": "1Gi",
+            "cpu_limit": "1"
+        }
     
     def get_operation_timeout(self, operation_name: str, default: int = 60) -> int:
         """Get timeout for specific operation"""
-        limits = self.get_environment_limits()
-        operation_timeout = limits.get("operation_timeout", default)
-        
-        # Check for operation-specific timeout in settings
-        operation_settings = self.config.get_operation_settings()
-        if operation_name in operation_settings:
-            operation_timeout = operation_settings[operation_name].get("timeout", operation_timeout)
-        
-        return operation_timeout
+        # Simplified timeout logic
+        timeout_map = {
+            "restart_service": 120,
+            "scale_service": 180,
+            "get_logs": 30,
+            "check_resources": 30,
+            "health_check": 15
+        }
+        return timeout_map.get(operation_name, default)
     
     def build_error_result(self, error: Exception, operation_name: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
         """Build standardized error result"""
@@ -128,14 +133,14 @@ class BaseExecutor(ABC):
         }
         
         try:
-            operation_settings = self.config.get_operation_settings()
-            safety_mode = operation_settings.get("safety_mode", {})
+            # Simplified safety checks using config
+            safety_mode = self.config.get('agent.safety_mode', True)
             
-            if not safety_mode.get("enabled", True):
+            if not safety_mode:
                 return safety_result
             
             # Check restricted commands
-            restricted_commands = safety_mode.get("restricted_commands", [])
+            restricted_commands = ["rm -rf", "dd if=", "mkfs", "shutdown", "reboot"]
             if operation_name == "execute_command":
                 command = parameters.get("command", "")
                 for restricted in restricted_commands:
@@ -144,14 +149,13 @@ class BaseExecutor(ABC):
                         safety_result["restrictions"].append(f"Command contains restricted pattern: {restricted}")
             
             # Check operations requiring confirmation
-            require_confirmation = safety_mode.get("require_confirmation", [])
+            require_confirmation = ["restart_service", "scale_service"]
             if operation_name in require_confirmation:
                 safety_result["warnings"].append(f"Operation '{operation_name}' requires confirmation in production")
             
             # Check restart frequency limits
             if operation_name == "restart_service":
-                max_frequency = safety_mode.get("max_restart_frequency", 3)
-                safety_result["warnings"].append(f"Maximum restart frequency: {max_frequency} per hour")
+                safety_result["warnings"].append("Maximum restart frequency: 3 per hour")
             
         except Exception as e:
             self.logger.error(f"Safety check failed: {e}")
