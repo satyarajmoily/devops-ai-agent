@@ -10,10 +10,39 @@ from datetime import datetime
 from typing import Dict, List, Optional, Any
 from pydantic import BaseModel, Field
 
-from agent.core.ai_reasoning import AIAction, AIDecision
-from agent.core.universal_executor import universal_executor, OperationResult
-from agent.core.ai_diagnostic_planner import ai_diagnostic_planner, DiagnosticPlan
-from agent.config.settings import get_settings
+from .ai_reasoning import AIAction, AIDecision
+from .universal_interface import UniversalInfrastructureInterface
+from .ai_intelligence.diagnostic_planner import DiagnosticPlanner, DiagnosticPlan
+from .config.universal_config import UniversalConfigLoader
+from ..config.settings import get_settings
+
+
+class OperationResult(BaseModel):
+    """Result of operation execution that's compatible with universal interface Dict returns."""
+    
+    success: bool = Field(..., description="Whether operation succeeded")
+    output: Optional[str] = Field(default=None, description="Output from operation")
+    error: Optional[str] = Field(default=None, description="Error message if failed")
+    metadata: Dict = Field(default_factory=dict, description="Additional execution metadata")
+    
+    @classmethod
+    def from_dict(cls, result_dict: Dict[str, Any]) -> "OperationResult":
+        """Create OperationResult from dictionary returned by universal interface."""
+        return cls(
+            success=result_dict.get("success", False),
+            output=result_dict.get("output"),
+            error=result_dict.get("error"),
+            metadata=result_dict.get("metadata", {})
+        )
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert back to dictionary format."""
+        return {
+            "success": self.success,
+            "output": self.output,
+            "error": self.error,
+            "metadata": self.metadata
+        }
 
 
 class ActionResult(BaseModel):
@@ -51,6 +80,9 @@ class IntelligentActionExecutor:
         """Initialize intelligent action executor."""
         self.settings = get_settings()
         self.logger = logging.getLogger(__name__)
+        self.config = UniversalConfigLoader()
+        self.universal_interface = UniversalInfrastructureInterface()
+        self.diagnostic_planner = DiagnosticPlanner(self.config)
     
     async def execute_ai_plan(self, ai_decision: AIDecision, context: Dict) -> PlanExecutionResult:
         """Execute an AI-generated action plan using intelligent diagnostics.
@@ -71,10 +103,12 @@ class IntelligentActionExecutor:
         try:
             # Create comprehensive diagnostic plan
             alert_context = self._extract_alert_context(ai_decision, context)
-            diagnostic_plan = await ai_diagnostic_planner.create_diagnostic_plan(alert_context)
+            diagnostic_plan = await self.diagnostic_planner.create_diagnostic_plan(alert_context)
             
-            # Log the diagnostic strategy
-            strategy_explanation = ai_diagnostic_planner.explain_diagnostic_strategy(diagnostic_plan)
+            # Log the diagnostic strategy (if method exists)
+            strategy_explanation = "AI-generated diagnostic plan"
+            if hasattr(self.diagnostic_planner, 'explain_diagnostic_strategy'):
+                strategy_explanation = self.diagnostic_planner.explain_diagnostic_strategy(diagnostic_plan)
             self.logger.info(f"📊 Diagnostic Strategy:\n{strategy_explanation}")
             
             # Execute the diagnostic plan
@@ -231,23 +265,28 @@ class IntelligentActionExecutor:
         self.logger.info(f"   💭 Reasoning: {reasoning}")
         
         try:
-            result = await universal_executor.execute_operation(op_name, parameters)
+            # Create operation dictionary for universal interface
+            operation = {
+                "name": op_name,
+                "parameters": parameters
+            }
+            result_dict = await self.universal_interface.execute_operation(operation)
+            result = OperationResult.from_dict(result_dict)
             
             if result.success:
-                self.logger.info(f"   ✅ {op_name} succeeded: {result.output[:100]}...")
+                output_str = str(result.output or "")[:100] if result.output else "No output"
+                self.logger.info(f"   ✅ {op_name} succeeded: {output_str}...")
             else:
-                self.logger.warning(f"   ❌ {op_name} failed: {result.error_message}")
+                self.logger.warning(f"   ❌ {op_name} failed: {result.error}")
             
             return result
             
         except Exception as e:
             self.logger.error(f"   💥 {op_name} execution error: {e}")
             return OperationResult(
-                operation=op_name,
-                target=parameters.get('target', 'unknown'),
                 success=False,
                 output="",
-                error_message=str(e)
+                error=str(e)
             )
     
     async def _execute_fallback_actions(self, action_plan: List[AIAction], start_time: float) -> PlanExecutionResult:
@@ -335,7 +374,13 @@ class IntelligentActionExecutor:
                 "format": "summary"
             })
         
-        return await universal_executor.execute_operation(operation_name, parameters)
+        # Create operation dictionary for universal interface
+        operation = {
+            "name": operation_name,
+            "parameters": parameters
+        }
+        result_dict = await self.universal_interface.execute_operation(operation)
+        return OperationResult.from_dict(result_dict)
 
 
 # Create global instance with new name to avoid conflicts

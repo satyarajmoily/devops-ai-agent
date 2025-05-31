@@ -188,3 +188,8 @@ pids/
 # Test files
 test_*.py
 simple_test.py
+debug_*.py
+
+# Temporary files
+*.tmp
+*.temp
