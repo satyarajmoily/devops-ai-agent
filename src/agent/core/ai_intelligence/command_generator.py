@@ -11,7 +11,7 @@ from typing import Dict, Any, List, Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
 
-from ...config.universal_config import UniversalConfigLoader
+from ...config.simple_config import get_config
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ class CreativeCommandGenerator:
     Generates custom diagnostic commands based on incident context and available operations
     """
     
-    def __init__(self, config: UniversalConfigLoader):
+    def __init__(self, config):
         """Initialize creative command generator"""
         self.config = config
         self.llm_config = config.get_llm_config()

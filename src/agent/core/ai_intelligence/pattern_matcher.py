@@ -11,7 +11,7 @@ from dataclasses import dataclass, asdict
 from collections import defaultdict
 import re
 
-from ...config.universal_config import UniversalConfigLoader
+from ...config.simple_config import get_config
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ class PatternMatcher:
     Learns from historical data and successful resolutions
     """
     
-    def __init__(self, config: UniversalConfigLoader):
+    def __init__(self, config):
         """Initialize pattern matcher"""
         self.config = config
         self.logger = logging.getLogger(__name__)

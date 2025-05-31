@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 from .ai_reasoning import AIAction, AIDecision
 from .universal_interface import UniversalInfrastructureInterface
 from .ai_intelligence.diagnostic_planner import DiagnosticPlanner, DiagnosticPlan
-from ..config.universal_config import UniversalConfigLoader
+from ..config.simple_config import get_config
 from ..config.settings import get_settings
 
 
@@ -80,7 +80,7 @@ class IntelligentActionExecutor:
         """Initialize intelligent action executor."""
         self.settings = get_settings()
         self.logger = logging.getLogger(__name__)
-        self.config = UniversalConfigLoader()
+        self.config = get_config()
         self.universal_interface = UniversalInfrastructureInterface()
         self.diagnostic_planner = DiagnosticPlanner(self.config)
     

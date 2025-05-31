@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from .diagnostic_planner import DiagnosticStep, DiagnosticPhase, DiagnosticPlan
-from ...config.universal_config import UniversalConfigLoader
+from ...config.simple_config import get_config
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +64,7 @@ class WorkflowEngine:
     Executes diagnostic plans with adaptive logic and intelligent decision making
     """
     
-    def __init__(self, config: UniversalConfigLoader, universal_interface):
+    def __init__(self, config, universal_interface):
         """Initialize workflow engine"""
         self.config = config
         self.universal_interface = universal_interface

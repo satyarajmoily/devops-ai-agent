@@ -11,7 +11,7 @@ from typing import Dict, Any, List, Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
 
-from ...config.universal_config import UniversalConfigLoader
+from ...config.simple_config import get_config
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +55,7 @@ class DiagnosticPlanner:
     Creates intelligent multi-phase diagnostic plans for infrastructure incidents
     """
     
-    def __init__(self, config: UniversalConfigLoader):
+    def __init__(self, config):
         """Initialize diagnostic planner with configuration"""
         self.config = config
         self.llm_config = config.get_llm_config()
@@ -75,7 +75,7 @@ class DiagnosticPlanner:
         try:
             import openai
             self.llm_client = openai.AsyncOpenAI(
-                api_key=self.llm_config["openai_api_key"]
+                api_key=self.llm_config["api_key"]
             )
         except ImportError:
             raise RuntimeError("OpenAI package not available. Install with: pip install openai")

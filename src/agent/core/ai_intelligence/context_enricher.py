@@ -11,7 +11,7 @@ from typing import Dict, Any, List, Optional, Tuple
 from dataclasses import dataclass
 from collections import defaultdict
 
-from ...config.universal_config import UniversalConfigLoader
+from ...config.simple_config import get_config
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,7 @@ class ContextEnricher:
     Provides rich context with service architecture, baselines, and historical patterns
     """
     
-    def __init__(self, config: UniversalConfigLoader):
+    def __init__(self, config):
         """Initialize context enricher"""
         self.config = config
         self.logger = logging.getLogger(__name__)

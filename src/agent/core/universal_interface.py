@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Dict, Any, List, Optional
 
 # Import existing components
-from ..config.universal_config import UniversalConfigLoader
+from ..config.simple_config import get_config
 from .operations.operation_registry import OperationRegistry
 from .executors import DockerExecutor, OCIExecutor
 
@@ -35,8 +35,8 @@ class UniversalInfrastructureInterface:
         self.logger = logging.getLogger(__name__)
         
         # Load configuration
-        self.config = UniversalConfigLoader()
-        self.environment = self.config.get_current_environment()
+        self.config = get_config()
+        self.environment = "docker"  # Default environment
         
         # Initialize operation registry
         self.registry = OperationRegistry()
@@ -51,7 +51,7 @@ class UniversalInfrastructureInterface:
     
     def _get_executor_for_environment(self):
         """Get appropriate executor for current environment"""
-        env_type = self.config.get_environment_type()
+        env_type = "docker"  # Default to docker environment
         
         if env_type in ["docker", "docker_compose"]:
             return DockerExecutor(self.config)
