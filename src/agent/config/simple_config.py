@@ -1,6 +1,6 @@
 """
-Simple Configuration Loader
-Replaces the complex infrastructure config system with simple .env file loading
+Strict Configuration Loader
+Loads configuration from .env file with NO DEFAULTS - fails fast if values are missing
 """
 import os
 from pathlib import Path
@@ -8,12 +8,12 @@ from typing import Dict, Any, Optional
 from dotenv import load_dotenv
 
 
-class SimpleConfig:
-    """Simple configuration loader that reads from .env files"""
+class StrictConfig:
+    """Strict configuration loader that requires all values from .env file"""
     
     def __init__(self, env_file: Optional[str] = None):
         """
-        Initialize the simple config loader
+        Initialize the strict config loader
         
         Args:
             env_file: Path to .env file (defaults to .env in project root)
@@ -24,71 +24,93 @@ class SimpleConfig:
             agent_root = Path(__file__).parent.parent.parent
             env_file = agent_root / ".env"
         
+        if not env_file.exists():
+            raise FileNotFoundError(f"❌ CRITICAL: .env file not found at {env_file}")
+        
         # Load environment variables from .env file
         load_dotenv(env_file)
         
         self._config = {}
         self._load_config()
     
+    def _require_env_var(self, var_name: str, var_type: str = "string") -> Any:
+        """Get required environment variable or fail with clear error"""
+        value = os.getenv(var_name)
+        if value is None or value == "":
+            raise ValueError(f"❌ REQUIRED: {var_name} must be set in .env file")
+        
+        # Type conversion
+        try:
+            if var_type == "int":
+                return int(value)
+            elif var_type == "float":
+                return float(value)
+            elif var_type == "bool":
+                return value.lower() in ('true', '1', 'yes', 'on')
+            else:
+                return value
+        except ValueError as e:
+            raise ValueError(f"❌ INVALID: {var_name} must be a valid {var_type}, got: {value}")
+    
     def _load_config(self):
-        """Load all configuration from environment variables"""
+        """Load all configuration from environment variables - NO DEFAULTS"""
         
-        # LLM Configuration
+        # LLM Configuration - ALL REQUIRED
         self._config['llm'] = {
-            'provider': os.getenv('LLM_PROVIDER', 'openai'),
-            'model': os.getenv('LLM_MODEL', 'gpt-4.1-nano-2025-04-14'),
-            'temperature': float(os.getenv('LLM_TEMPERATURE', '0.1')),
-            'max_tokens': int(os.getenv('LLM_MAX_TOKENS', '4000')),
-            'timeout': int(os.getenv('LLM_TIMEOUT', '60')),
-            'api_key': os.getenv('OPENAI_API_KEY', '')
+            'provider': self._require_env_var('LLM_PROVIDER'),
+            'model': self._require_env_var('LLM_MODEL'),
+            'temperature': self._require_env_var('LLM_TEMPERATURE', 'float'),
+            'max_tokens': self._require_env_var('LLM_MAX_TOKENS', 'int'),
+            'timeout': self._require_env_var('LLM_TIMEOUT', 'int'),
+            'api_key': self._require_env_var('OPENAI_API_KEY')
         }
         
-        # Agent Configuration
+        # Agent Configuration - ALL REQUIRED
         self._config['agent'] = {
-            'name': os.getenv('AGENT_NAME', 'devops-ai-agent'),
-            'port': int(os.getenv('AGENT_PORT', '8001')),
-            'service_name': os.getenv('SERVICE_NAME', 'devops-ai-agent'),
-            'service_version': os.getenv('SERVICE_VERSION', '0.1.0'),
-            'safety_mode': os.getenv('SAFETY_MODE', 'true').lower() == 'true',
-            'fallback_enabled': os.getenv('FALLBACK_ENABLED', 'false').lower() == 'true',
-            'monitoring_interval': int(os.getenv('MONITORING_INTERVAL', '30'))
+            'name': self._require_env_var('AGENT_NAME'),
+            'port': self._require_env_var('AGENT_PORT', 'int'),
+            'service_name': self._require_env_var('SERVICE_NAME'),
+            'service_version': self._require_env_var('SERVICE_VERSION'),
+            'safety_mode': self._require_env_var('SAFETY_MODE', 'bool'),
+            'fallback_enabled': self._require_env_var('FALLBACK_ENABLED', 'bool'),
+            'monitoring_interval': self._require_env_var('MONITORING_INTERVAL', 'int')
         }
         
-        # Monitoring Services
+        # Monitoring Services - ALL REQUIRED  
         self._config['monitoring'] = {
-            'prometheus_url': os.getenv('PROMETHEUS_URL', 'http://prometheus:9090'),
-            'alertmanager_url': os.getenv('ALERTMANAGER_URL', 'http://alertmanager:9093'),
-            'grafana_url': os.getenv('GRAFANA_URL', 'http://grafana:3000'),
-            'market_predictor_url': os.getenv('MARKET_PREDICTOR_URL', 'http://localhost:8000')
+            'prometheus_url': self._require_env_var('PROMETHEUS_URL'),
+            'alertmanager_url': self._require_env_var('ALERTMANAGER_URL'),
+            'grafana_url': self._require_env_var('GRAFANA_URL'),
+            'market_predictor_url': self._require_env_var('MARKET_PREDICTOR_URL')
         }
         
-        # GitHub Configuration
+        # GitHub Configuration - ALL REQUIRED
         self._config['github'] = {
-            'token': os.getenv('GITHUB_TOKEN', ''),
-            'user_name': os.getenv('GITHUB_USER_NAME', 'satyarajmoily'),
-            'user_email': os.getenv('GITHUB_USER_EMAIL', 'satyarajmoily@gmail.com')
+            'token': self._require_env_var('GITHUB_TOKEN'),
+            'user_name': self._require_env_var('GITHUB_USER_NAME'),
+            'user_email': self._require_env_var('GITHUB_USER_EMAIL')
         }
         
-        # Repository Configuration
-        repos_str = os.getenv('TARGET_REPOSITORIES', '')
+        # Repository Configuration - REQUIRED
+        repos_str = self._require_env_var('TARGET_REPOSITORIES')
         self._config['repositories'] = {
             'target_repositories': repos_str.split(',') if repos_str else []
         }
         
-        # Service Configuration
+        # Service Configuration - ALL REQUIRED
         self._config['service'] = {
-            'max_actions_per_cycle': int(os.getenv('MAX_ACTIONS_PER_CYCLE', '3')),
-            'health_check_timeout': int(os.getenv('HEALTH_CHECK_TIMEOUT', '10')),
-            'metrics_cache_ttl': int(os.getenv('METRICS_CACHE_TTL', '60')),
-            'test_timeout': int(os.getenv('TEST_TIMEOUT', '300'))
+            'max_actions_per_cycle': self._require_env_var('MAX_ACTIONS_PER_CYCLE', 'int'),
+            'health_check_timeout': self._require_env_var('HEALTH_CHECK_TIMEOUT', 'int'),
+            'metrics_cache_ttl': self._require_env_var('METRICS_CACHE_TTL', 'int'),
+            'test_timeout': self._require_env_var('TEST_TIMEOUT', 'int')
         }
         
-        # Development Settings
+        # Development Settings - ALL REQUIRED
         self._config['development'] = {
-            'enable_testing': os.getenv('ENABLE_TESTING', 'true').lower() == 'true',
-            'auto_restart': os.getenv('AUTO_RESTART', 'true').lower() == 'true',
-            'log_level': os.getenv('LOG_LEVEL', 'INFO'),
-            'environment': os.getenv('ENVIRONMENT', 'development')
+            'enable_testing': self._require_env_var('ENABLE_TESTING', 'bool'),
+            'auto_restart': self._require_env_var('AUTO_RESTART', 'bool'),
+            'log_level': self._require_env_var('LOG_LEVEL'),
+            'environment': self._require_env_var('ENVIRONMENT')
         }
     
     def get(self, key: str, default: Any = None) -> Any:
@@ -140,11 +162,11 @@ class SimpleConfig:
 # Global config instance
 _config_instance = None
 
-def get_config() -> SimpleConfig:
+def get_config() -> StrictConfig:
     """Get the global configuration instance"""
     global _config_instance
     if _config_instance is None:
-        _config_instance = SimpleConfig()
+        _config_instance = StrictConfig()
     return _config_instance
 
 def reload_config():
