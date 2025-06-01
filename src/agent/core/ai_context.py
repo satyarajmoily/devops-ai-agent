@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Dict, List, Optional, Any
 import aiohttp
 import docker
@@ -29,6 +30,72 @@ class AIContextGatherer:
             self.docker_client.ping()
         except DockerException:
             self.docker_client = None
+    
+    def _get_project_root(self) -> Path:
+        """Find the project root directory by looking for infrastructure/docker-compose.yml."""
+        current_file = Path(__file__)
+        
+        # Handle different environments
+        if str(current_file).startswith('/app/'):
+            # Running in container: /app/src/agent/core/ai_context.py
+            # Project root is mounted, try different possible mount points
+            possible_roots = [
+                Path('/workspace'),  # Common mount point
+                Path('/project'),    # Alternative mount point  
+                Path('/app').parent.parent.parent.parent,  # If mounted as volume
+            ]
+            
+            # Check if any of these exist and contain expected structure
+            for root in possible_roots:
+                if (root / 'infrastructure' / 'docker-compose.yml').exists():
+                    return root
+            
+            # Fallback to current working directory approach
+            return Path.cwd()
+        else:
+            # Running locally - find project root by looking for infrastructure/docker-compose.yml
+            current_path = current_file.resolve()
+            
+            # Try current working directory first (most common case)
+            if (Path.cwd() / 'infrastructure' / 'docker-compose.yml').exists():
+                return Path.cwd()
+            
+            # Search up the directory tree for any directory with infrastructure/docker-compose.yml
+            for parent in current_path.parents:
+                if (parent / 'infrastructure' / 'docker-compose.yml').exists():
+                    return parent
+            
+            # Fallback to relative calculation if we know the structure
+            # devops-ai-agent/src/agent/core/ai_context.py is 4 levels deep from project root
+            return current_file.parent.parent.parent.parent.resolve()
+    
+    def _get_compose_file_paths(self) -> List[str]:
+        """Get list of docker-compose.yml files using relative paths."""
+        project_root = self._get_project_root()
+        return [
+            str(project_root / "docker-compose.yml"),
+            str(project_root / "infrastructure" / "docker-compose.yml")
+        ]
+    
+    def _get_compose_project_name(self) -> str:
+        """Get the Docker Compose project name dynamically."""
+        try:
+            # Try to get it from Docker environment first
+            if self.docker_client:
+                # Get containers and extract project name from labels
+                containers = self.docker_client.containers.list(all=True)
+                for container in containers:
+                    project_label = container.labels.get("com.docker.compose.project")
+                    if project_label:
+                        return project_label
+            
+            # Fallback: use the project directory name
+            project_root = self._get_project_root()
+            return project_root.name.lower().replace(" ", "-").replace("_", "-")
+            
+        except Exception:
+            # Ultimate fallback
+            return "ai-agent-platform"
     
     async def gather_complete_context(self, alert_data: Dict) -> Dict:
         """Gather comprehensive context for AI analysis.
@@ -204,7 +271,7 @@ class AIContextGatherer:
     async def _get_infrastructure_topology(self) -> Dict:
         """Get infrastructure topology and relationships."""
         topology = {
-            "compose_project": "autonomous-trading-builder",
+            "compose_project": self._get_compose_project_name(),
             "expected_services": [
                 "market-predictor",
                 "devops-ai-agent", 
@@ -397,11 +464,8 @@ class AIContextGatherer:
     async def _get_compose_configuration(self) -> Dict:
         """Get Docker Compose configuration information."""
         try:
-            # Check if compose files exist
-            compose_files = [
-                "/Users/satyarajmoily/AutonomousTradingBuilder/docker-compose.yml",
-                "/Users/satyarajmoily/AutonomousTradingBuilder/infrastructure/docker-compose.yml"
-            ]
+            # Get compose files using dynamic path resolution
+            compose_files = self._get_compose_file_paths()
             
             compose_info = {
                 "files_found": [],

@@ -48,6 +48,17 @@ class DiagnosticPlan:
     estimated_duration: str
     created_at: datetime
     context: Dict[str, Any]
+    problem_type: str = "service_down"
+    environment: str = "docker"
+    success_criteria: List[str] = None
+    escalation_triggers: List[str] = None
+    
+    def __post_init__(self):
+        """Initialize default values after creation"""
+        if self.success_criteria is None:
+            self.success_criteria = ["Service responding to health checks", "No error logs in last 5 minutes"]
+        if self.escalation_triggers is None:
+            self.escalation_triggers = ["Multiple restart attempts failed", "Resource exhaustion detected", "Critical error patterns found"]
 
 class DiagnosticPlanner:
     """
@@ -200,7 +211,9 @@ class DiagnosticPlanner:
             phases=phases,
             estimated_duration=estimated_duration,
             created_at=datetime.now(),
-            context=incident_context
+            context=incident_context,
+            problem_type=incident_type,
+            environment=incident_context.get("environment", {}).get("current", "docker")
         )
         
         self.logger.info(f"Created diagnostic plan with {len(diagnostic_steps)} steps across {len(phases)} phases")

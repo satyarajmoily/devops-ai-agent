@@ -327,12 +327,11 @@ class DockerServiceManager:
             return None
         
         try:
-            # Find container by service name
+            # Find container by service name (try most likely patterns first)
             container_names = [
-                f"autonomous-trading-builder_{service_name}_1",
-                service_name,
-                f"autonomoustradingbuilder_{service_name}_1",
-                f"{service_name}_1"
+                service_name,  # Modern Docker Compose with container_name
+                f"{service_name}_1",  # Default Docker Compose pattern
+                f"infrastructure_{service_name}_1"  # Infrastructure directory project pattern
             ]
             
             for name in container_names:

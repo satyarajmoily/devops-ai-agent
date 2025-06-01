@@ -117,7 +117,7 @@ class UniversalInfrastructureInterface:
         start_time = datetime.now()
         
         try:
-            result = await self.executor.execute(operation)
+            result = await self.executor.execute_operation(operation_name, operation.get("parameters", {}))
             execution_time = (datetime.now() - start_time).total_seconds()
             
             # Add execution metadata
@@ -171,7 +171,8 @@ class UniversalInfrastructureInterface:
             Diagnostic plan with AI-powered step recommendations
         """
         if not self.ai_enabled or not self.diagnostic_planner:
-            return await self._create_fallback_diagnostic_plan(alert_data)
+            self.logger.error("AI diagnostic planner not available - escalating to human intervention")
+            raise RuntimeError("AI diagnostic planner not available - human intervention required")
         
         try:
             # Generate comprehensive AI context
@@ -232,7 +233,8 @@ class UniversalInfrastructureInterface:
             
         except Exception as e:
             self.logger.error(f"AI diagnostic planning failed: {e}")
-            return await self._create_fallback_diagnostic_plan(alert_data)
+            self.logger.error("AI diagnostic planning failed - escalating to human intervention")
+            raise RuntimeError(f"AI diagnostic planning failed: {e} - human intervention required")
     
     async def execute_diagnostic_workflow(self, diagnostic_plan: Dict[str, Any], options: Dict[str, Any] = None) -> Dict[str, Any]:
         """
@@ -246,7 +248,8 @@ class UniversalInfrastructureInterface:
             Workflow execution results
         """
         if not self.ai_enabled or not self.workflow_engine:
-            return await self._execute_fallback_workflow(diagnostic_plan, options)
+            self.logger.error("AI workflow engine not available - escalating to human intervention")
+            raise RuntimeError("AI workflow engine not available - human intervention required")
         
         try:
             # Convert dictionary plan back to DiagnosticPlan object
@@ -321,13 +324,9 @@ class UniversalInfrastructureInterface:
             return result
             
         except Exception as e:
-            self.logger.error(f"Workflow execution failed: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "workflow_id": None,
-                "status": "failed"
-            }
+            self.logger.error(f"AI workflow execution failed: {e}")
+            self.logger.error("AI workflow execution failed - escalating to human intervention")
+            raise RuntimeError(f"AI workflow execution failed: {e} - human intervention required")
     
     async def generate_custom_commands(self, incident_context: Dict[str, Any], investigation_focus: str, max_commands: int = 5) -> Dict[str, Any]:
         """

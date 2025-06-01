@@ -19,9 +19,10 @@ class SimpleConfig:
             env_file: Path to .env file (defaults to .env in project root)
         """
         if env_file is None:
-            # Look for .env file in project root
-            project_root = Path(__file__).parent.parent.parent
-            env_file = project_root / ".env"
+            # Look for .env file in devops-ai-agent root directory
+            # Path: devops-ai-agent/src/agent/config/simple_config.py -> devops-ai-agent/.env
+            agent_root = Path(__file__).parent.parent.parent
+            env_file = agent_root / ".env"
         
         # Load environment variables from .env file
         load_dotenv(env_file)

@@ -119,8 +119,8 @@ class IntelligentActionExecutor:
             
         except Exception as e:
             self.logger.error(f"❌ Intelligent plan execution failed: {e}")
-            # Fallback to simple action execution
-            return await self._execute_fallback_actions(ai_decision.action_plan, start_time)
+            self.logger.error("AI intelligent plan execution failed - escalating to human intervention")
+            raise RuntimeError(f"AI intelligent plan execution failed: {e} - human intervention required")
     
     def _extract_alert_context(self, ai_decision: AIDecision, context: Dict) -> Dict[str, Any]:
         """Extract alert context for diagnostic planning."""
