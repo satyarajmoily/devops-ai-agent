@@ -19,7 +19,7 @@ class OperationRegistry:
         """Initialize operation registry with configuration loader"""
         self.config_loader = config_loader or get_config()
         self.operations = self._load_operations_from_config()
-        self.current_environment = "docker"  # Default environment
+        self.current_environment = "gateway"  # AI Command Gateway environment
         
         logger.info(
             f"Operation registry initialized with {len(self.operations)} operations "
@@ -28,12 +28,12 @@ class OperationRegistry:
     
     def _load_operations_from_config(self) -> Dict[str, Any]:
         """Load operation definitions from configuration"""
-        # Simplified operation definitions
+        # AI Command Gateway operation definitions
         operations = {
             "check_resources": {
-                "description": "Check system resource usage",
+                "description": "Check system resource usage via AI Command Gateway",
                 "category": "monitoring",
-                "environments": ["docker", "oci"],
+                "environments": ["gateway"],
                 "parameters": {
                     "target": {"type": "string", "required": True},
                     "metrics": {"type": "array", "default": ["cpu", "memory"]},
@@ -41,9 +41,9 @@ class OperationRegistry:
                 }
             },
             "get_logs": {
-                "description": "Retrieve service logs",
+                "description": "Retrieve service logs via AI Command Gateway",
                 "category": "diagnostic",
-                "environments": ["docker", "oci"],
+                "environments": ["gateway"],
                 "parameters": {
                     "target": {"type": "string", "required": True},
                     "lines": {"type": "integer", "default": 50},
@@ -51,9 +51,9 @@ class OperationRegistry:
                 }
             },
             "health_check": {
-                "description": "Check service health",
+                "description": "Check service health via AI Command Gateway",
                 "category": "monitoring",
-                "environments": ["docker", "oci"],
+                "environments": ["gateway"],
                 "parameters": {
                     "target": {"type": "string", "required": True},
                     "endpoints": {"type": "array", "default": ["/health"]},
@@ -61,9 +61,9 @@ class OperationRegistry:
                 }
             },
             "restart_service": {
-                "description": "Restart a service",
+                "description": "Restart a service via AI Command Gateway",
                 "category": "management",
-                "environments": ["docker", "oci"],
+                "environments": ["gateway"],
                 "parameters": {
                     "target": {"type": "string", "required": True},
                     "strategy": {"type": "string", "default": "graceful"},
@@ -71,9 +71,9 @@ class OperationRegistry:
                 }
             },
             "scale_service": {
-                "description": "Scale a service",
+                "description": "Scale a service via AI Command Gateway",
                 "category": "management",
-                "environments": ["docker", "oci"],
+                "environments": ["gateway"],
                 "parameters": {
                     "target": {"type": "string", "required": True},
                     "replicas": {"type": "integer", "required": True},
@@ -81,9 +81,9 @@ class OperationRegistry:
                 }
             },
             "execute_command": {
-                "description": "Execute a custom command",
+                "description": "Execute a custom command via AI Command Gateway",
                 "category": "diagnostic",
-                "environments": ["docker", "oci"],
+                "environments": ["gateway"],
                 "parameters": {
                     "command": {"type": "string", "required": True},
                     "timeout": {"type": "integer", "default": 30}

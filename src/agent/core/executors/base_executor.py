@@ -96,10 +96,13 @@ class BaseExecutor(ABC):
     
     def build_error_result(self, error: Exception, operation_name: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
         """Build standardized error result"""
+        error_message = str(error)
         return {
-            "output": f"Operation '{operation_name}' failed: {error}",
+            "success": False,
+            "output": f"Operation '{operation_name}' failed: {error_message}",
+            "error": error_message,
             "metadata": {
-                "error": str(error),
+                "error": error_message,
                 "error_type": type(error).__name__,
                 "operation": operation_name,
                 "parameters": parameters,
@@ -111,7 +114,9 @@ class BaseExecutor(ABC):
     def build_success_result(self, output: str, metadata: Dict[str, Any] = None, return_code: int = 0) -> Dict[str, Any]:
         """Build standardized success result"""
         return {
+            "success": True,
             "output": output,
+            "error": None,
             "metadata": metadata or {},
             "return_code": return_code
         }

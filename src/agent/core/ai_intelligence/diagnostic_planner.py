@@ -344,8 +344,8 @@ Return a JSON array of diagnostic steps with this exact structure:
     "phase": "triage|isolation|analysis|resolution|validation",
     "operation": "operation_name",
     "parameters": {{
-      "target": "{incident.get('service', 'service_name')}",
-      "...": "other_parameters"
+      "target": "{incident.get('service')}",
+      "...": "other_parameters_as_needed"
     }},
     "reasoning": "Why this step is needed and what it will reveal",
     "expected_duration": "30s|2m|5m",
@@ -355,6 +355,8 @@ Return a JSON array of diagnostic steps with this exact structure:
     "timeout": 60
   }}
 ]
+
+CRITICAL: Always set "target" parameter to the service name "{incident.get('service')}" for ALL operations that require a target.
 
 Generate 6-10 diagnostic steps covering multiple phases.
 Prioritize based on {incident.get('severity', 'medium')} severity.
@@ -393,13 +395,24 @@ Consider {environment.get('type', 'unknown')} environment constraints.
             json_content = ai_content[json_start:json_end]
             steps_data = json.loads(json_content)
             
-            # Convert to DiagnosticStep objects
+            # Convert to DiagnosticStep objects and validate parameters
             steps = []
+            service_name = context.get("incident", {}).get("service", "unknown")
+            
             for step_data in steps_data:
+                parameters = step_data.get("parameters", {})
+                
+                # Ensure target parameter is set correctly for operations that need it
+                operation = step_data.get("operation", "check_resources")
+                if operation in ["health_check", "get_logs", "restart_service", "check_resources", "scale_service"]:
+                    if "target" not in parameters or not parameters["target"] or parameters["target"] == "unknown":
+                        parameters["target"] = service_name
+                        self.logger.warning(f"Fixed missing target parameter for {operation}, set to {service_name}")
+                
                 step = DiagnosticStep(
                     phase=DiagnosticPhase(step_data.get("phase", "triage")),
-                    operation=step_data.get("operation", "check_resources"),
-                    parameters=step_data.get("parameters", {}),
+                    operation=operation,
+                    parameters=parameters,
                     reasoning=step_data.get("reasoning", "AI-generated diagnostic step"),
                     expected_duration=step_data.get("expected_duration", "60s"),
                     success_criteria=step_data.get("success_criteria", "Operation completes successfully"),

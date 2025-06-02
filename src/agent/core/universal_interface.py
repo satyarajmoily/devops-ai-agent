@@ -11,7 +11,7 @@ from typing import Dict, Any, List, Optional
 # Import existing components
 from ..config.simple_config import get_config
 from .operations.operation_registry import OperationRegistry
-from .executors import DockerExecutor, OCIExecutor
+from .executors.gateway_executor import GatewayExecutor
 
 # Import new AI intelligence components
 from .ai_intelligence import (
@@ -36,7 +36,7 @@ class UniversalInfrastructureInterface:
         
         # Load configuration
         self.config = get_config()
-        self.environment = "docker"  # Default environment
+        self.environment = "gateway"  # Default to AI Command Gateway environment
         
         # Initialize operation registry
         self.registry = OperationRegistry()
@@ -50,15 +50,9 @@ class UniversalInfrastructureInterface:
         self.logger.info(f"Universal Infrastructure Interface initialized for {self.environment}")
     
     def _get_executor_for_environment(self):
-        """Get appropriate executor for current environment"""
-        env_type = "docker"  # Default to docker environment
-        
-        if env_type in ["docker", "docker_compose"]:
-            return DockerExecutor(self.config)
-        elif env_type == "oci":
-            return OCIExecutor(self.config)
-        else:
-            raise ValueError(f"Unsupported environment type: {env_type}")
+        """Get AI Command Gateway executor"""
+        # Only AI Command Gateway is supported
+        return GatewayExecutor(self.config)
     
     def _initialize_ai_intelligence(self):
         """Initialize AI intelligence components"""

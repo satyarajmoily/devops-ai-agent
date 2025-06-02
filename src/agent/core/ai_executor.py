@@ -28,6 +28,14 @@ class OperationResult(BaseModel):
     @classmethod
     def from_dict(cls, result_dict: Dict[str, Any]) -> "OperationResult":
         """Create OperationResult from dictionary returned by universal interface."""
+        if result_dict is None:
+            return cls(
+                success=False,
+                output=None,
+                error="Operation returned None result",
+                metadata={}
+            )
+        
         return cls(
             success=result_dict.get("success", False),
             output=result_dict.get("output"),
@@ -99,11 +107,15 @@ class IntelligentActionExecutor:
         self.logger.info(f"📋 AI Analysis: {ai_decision.analysis}")
         self.logger.info(f"🔍 Root Cause: {ai_decision.root_cause}")
         self.logger.info(f"💡 AI Decision: {ai_decision.decision}")
+        print(f"🔧 DEBUG: Action plan has {len(ai_decision.action_plan)} actions")
         
         try:
             # Create comprehensive diagnostic plan
             alert_context = self._extract_alert_context(ai_decision, context)
+            extracted_service = alert_context.get('incident', {}).get('service', 'unknown')
+            print(f"🔧 DEBUG: Alert context service: {extracted_service}")
             diagnostic_plan = await self.diagnostic_planner.create_diagnostic_plan(alert_context)
+            print(f"🔧 DEBUG: Diagnostic plan created with {len(diagnostic_plan.phases)} phases")
             
             # Log the diagnostic strategy (if method exists)
             strategy_explanation = "AI-generated diagnostic plan"
@@ -125,12 +137,56 @@ class IntelligentActionExecutor:
     def _extract_alert_context(self, ai_decision: AIDecision, context: Dict) -> Dict[str, Any]:
         """Extract alert context for diagnostic planning."""
         
-        # Extract service name from actions or context
+        print(f"🔧 DEBUG: Context keys: {list(context.keys())}")
+        
+        # Extract service name from multiple sources in priority order
         service = "unknown"
-        for action in ai_decision.action_plan:
-            if action.target and action.target != "unknown":
-                service = action.target
-                break
+        
+        # 1. Try to get from alert context (most reliable)
+        alert_details = context.get("alert_details", {})
+        print(f"🔧 DEBUG: Alert details keys: {list(alert_details.keys())}")
+        alerts = alert_details.get("alerts", [])
+        print(f"🔧 DEBUG: Found {len(alerts)} alerts")
+        
+        if alerts:
+            for i, alert in enumerate(alerts):
+                print(f"🔧 DEBUG: Alert {i} keys: {list(alert.keys())}")
+                labels = alert.get("labels", {})
+                print(f"🔧 DEBUG: Alert {i} labels: {labels}")
+                service_from_alert = labels.get("service")
+                if service_from_alert:
+                    service = service_from_alert
+                    print(f"🔧 DEBUG: Found service from alert labels: {service}")
+                    break
+        
+        # 2. Try to get from alert name (MarketPredictorDown -> market-predictor)
+        if service == "unknown":
+            print(f"🔧 DEBUG: Service still unknown, trying alert name extraction")
+            alert_name = context.get("alert_name", "")
+            if not alert_name and alerts:
+                alert_name = alerts[0].get("labels", {}).get("alertname", "")
+            print(f"🔧 DEBUG: Alert name: {alert_name}")
+            
+            if "MarketPredictor" in alert_name:
+                service = "market-predictor"
+                print(f"🔧 DEBUG: Mapped MarketPredictor to: {service}")
+            elif "DevOpsAgent" in alert_name:
+                service = "devops-ai-agent"
+                print(f"🔧 DEBUG: Mapped DevOpsAgent to: {service}")
+            elif "Gateway" in alert_name:
+                service = "ai-command-gateway"
+                print(f"🔧 DEBUG: Mapped Gateway to: {service}")
+        
+        # 3. Try to get from AI decision actions
+        if service == "unknown":
+            print(f"🔧 DEBUG: Service still unknown, trying AI decision actions")
+            for action in ai_decision.action_plan:
+                if action.target and action.target != "unknown":
+                    service = action.target
+                    print(f"🔧 DEBUG: Found service from AI action: {service}")
+                    break
+        
+        print(f"🔧 DEBUG: Final extracted service: {service}")
         
         # Determine problem symptoms from AI analysis
         symptoms = ai_decision.analysis or "Service appears to be down"
@@ -142,14 +198,22 @@ class IntelligentActionExecutor:
         elif "high" in ai_decision.decision.lower():
             severity = "high"
         
+        # Structure context as expected by diagnostic planner
         return {
-            "alert_name": context.get("alert_name", "ServiceDown"),
-            "service": service,
-            "severity": severity,
-            "symptoms": symptoms,
-            "duration": context.get("duration", "Unknown"),
-            "recent_changes": context.get("recent_changes", "None reported"),
-            "error_messages": context.get("error_messages", "None available")
+            "incident": {
+                "alert_name": context.get("alert_name", "ServiceDown"),
+                "service": service,
+                "severity": severity,
+                "symptoms": symptoms,
+                "duration": context.get("duration", "Unknown"),
+                "recent_changes": context.get("recent_changes", "None reported"),
+                "error_messages": context.get("error_messages", "None available")
+            },
+            "environment": {
+                "current": "docker",
+                "type": "container",
+                "capabilities": ["restart", "logs", "health_check", "resources"]
+            }
         }
     
     async def _execute_diagnostic_plan(self, plan: DiagnosticPlan) -> PlanExecutionResult:
@@ -162,67 +226,48 @@ class IntelligentActionExecutor:
         
         self.logger.info(f"🚀 Starting diagnostic plan execution: {plan.problem_type}")
         
-        for phase_idx, phase in enumerate(plan.phases):
-            self.logger.info(f"📍 Phase {phase_idx + 1}: {phase.name} (max {phase.max_duration}s)")
+        for phase_idx, (phase_enum, diagnostic_steps) in enumerate(plan.phases.items()):
+            phase_name = phase_enum.value
+            self.logger.info(f"📍 Phase {phase_idx + 1}: {phase_name} ({len(diagnostic_steps)} steps)")
             
             phase_start_time = time.time()
             phase_success = True
             
-            # Execute operations in the phase
-            if phase.parallel_execution:
-                # Execute operations in parallel
-                tasks = []
-                for operation in phase.operations:
-                    task = self._execute_single_operation(operation)
-                    tasks.append(task)
+            # Execute diagnostic steps in the phase sequentially
+            for step in diagnostic_steps:
+                # Convert DiagnosticStep to operation format
+                operation_dict = {
+                    "operation": step.operation,
+                    "parameters": step.parameters,
+                    "reasoning": step.reasoning
+                }
                 
-                operation_results = await asyncio.gather(*tasks, return_exceptions=True)
+                result = await self._execute_single_operation(operation_dict)
+                executed_operations.append({
+                    **result.to_dict(),
+                    "phase": phase_name,
+                    "reasoning": step.reasoning,
+                    "expected_duration": step.expected_duration,
+                    "success_criteria": step.success_criteria
+                })
                 
-                for i, result in enumerate(operation_results):
-                    if isinstance(result, Exception):
-                        self.logger.error(f"❌ Operation {phase.operations[i]['operation']} failed: {result}")
-                        phase_success = False
-                        executed_operations.append({
-                            "operation": phase.operations[i]['operation'],
-                            "success": False,
-                            "error": str(result),
-                            "phase": phase.name
-                        })
-                    else:
-                        executed_operations.append({
-                            **result.to_dict(),
-                            "phase": phase.name,
-                            "reasoning": phase.operations[i].get('reasoning', 'No reasoning provided')
-                        })
-                        if not result.success:
-                            phase_success = False
-            else:
-                # Execute operations sequentially
-                for operation in phase.operations:
-                    result = await self._execute_single_operation(operation)
-                    executed_operations.append({
-                        **result.to_dict(),
-                        "phase": phase.name,
-                        "reasoning": operation.get('reasoning', 'No reasoning provided')
-                    })
-                    
-                    if not result.success:
-                        phase_success = False
-                        self.logger.warning(f"⚠️ Operation {operation['operation']} failed, continuing with phase...")
+                if not result.success:
+                    phase_success = False
+                    self.logger.warning(f"⚠️ Operation {step.operation} failed, continuing with phase...")
             
             phase_duration = time.time() - phase_start_time
             
             if phase_success:
                 phases_completed += 1
-                self.logger.info(f"✅ Phase {phase.name} completed successfully in {phase_duration:.1f}s")
+                self.logger.info(f"✅ Phase {phase_name} completed successfully in {phase_duration:.1f}s")
             else:
-                self.logger.warning(f"⚠️ Phase {phase.name} completed with failures in {phase_duration:.1f}s")
+                self.logger.warning(f"⚠️ Phase {phase_name} completed with failures in {phase_duration:.1f}s")
                 phases_completed += 1  # Count as completed even with failures
             
             # Check if we should escalate based on phase results
-            if not phase_success and phase.name in ["immediate_triage", "resolution"]:
+            if not phase_success and phase_name in ["triage", "resolution"]:
                 escalation_required = True
-                self.logger.warning(f"🚨 Critical phase {phase.name} failed, escalation may be required")
+                self.logger.warning(f"🚨 Critical phase {phase_name} failed, escalation may be required")
         
         # Determine final status
         overall_success = phases_completed == len(plan.phases) and not escalation_required
@@ -262,7 +307,7 @@ class IntelligentActionExecutor:
         reasoning = operation.get('reasoning', 'No reasoning provided')
         
         self.logger.info(f"🔧 Executing {op_name} on {parameters.get('target', 'unknown')}")
-        self.logger.info(f"   💭 Reasoning: {reasoning}")
+        self.logger.info(f"    Reasoning: {reasoning}")
         
         try:
             # Create operation dictionary for universal interface

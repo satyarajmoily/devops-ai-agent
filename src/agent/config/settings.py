@@ -1,61 +1,16 @@
 """Configuration settings for the DevOps AI Agent."""
 
-from functools import lru_cache
-from typing import List, Optional
-
-from pydantic import Field, SecretStr
-from pydantic_settings import BaseSettings
-
 # Import strict config
 from .simple_config import get_config
+from typing import List
+from pydantic import Field
 
 
-class Settings(BaseSettings):
+class Settings:
     """Agent settings with strict .env file configuration - NO DEFAULTS."""
     
-    # Application settings - NO DEFAULTS
-    environment: str = Field(description="Environment name")
-    log_level: str = Field(description="Logging level")
-    debug: bool = Field(description="Debug mode")
-    
-    # API settings - NO DEFAULTS
-    api_host: str = Field(description="API host")
-    api_port: int = Field(description="API port")
-    api_prefix: str = Field(default="/api/v1", description="API prefix")
-    
-    # Service settings - NO DEFAULTS
-    service_name: str = Field(description="Service name")
-    service_version: str = Field(description="Service version")
-    
-    # LLM Configuration - NO DEFAULTS! All values from .env file
-    openai_api_key: Optional[SecretStr] = Field(default=None, description="OpenAI API key")
-    anthropic_api_key: Optional[SecretStr] = Field(default=None, description="Anthropic API key")
-    llm_provider: Optional[str] = Field(default=None, description="LLM provider (from .env)")
-    llm_model: Optional[str] = Field(default=None, description="LLM model name (from .env)")
-    llm_temperature: Optional[float] = Field(default=None, description="LLM temperature (from .env)")
-    llm_max_tokens: Optional[int] = Field(default=None, description="Maximum tokens (from .env)")
-    llm_timeout: Optional[int] = Field(default=None, description="LLM timeout (from .env)")
-    
-    # External Service Configuration - NO DEFAULTS
-    market_predictor_url: str = Field(description="Market predictor service URL")
-    prometheus_url: str = Field(description="Prometheus URL")
-    alertmanager_url: str = Field(description="Alertmanager URL")
-    grafana_url: str = Field(description="Grafana URL")
-    
-    # GitHub Configuration - NO DEFAULTS
-    github_token: str = Field(description="GitHub token")
-    github_user_name: str = Field(description="GitHub user name")
-    github_user_email: str = Field(description="GitHub user email")
-    
-    # Agent Configuration - NO DEFAULTS
-    safety_mode: bool = Field(description="Safety mode enabled")
-    fallback_enabled: bool = Field(description="Fallback enabled")
-    monitoring_interval: int = Field(description="Monitoring interval")
-    
-    def __init__(self, **kwargs):
+    def __init__(self):
         """Initialize settings with strict config from .env file."""
-        super().__init__(**kwargs)
-        
         # Load configuration from .env file using strict config
         try:
             config = get_config()
@@ -70,6 +25,7 @@ class Settings(BaseSettings):
             agent_config = config.get_agent_config()
             self.api_host = "0.0.0.0"  # Standard for containers
             self.api_port = agent_config['port']
+            self.api_prefix = "/api/v1"
             self.service_name = agent_config['service_name']
             self.service_version = agent_config['service_version']
             self.safety_mode = agent_config['safety_mode']
@@ -83,7 +39,8 @@ class Settings(BaseSettings):
             self.llm_temperature = llm_config['temperature']
             self.llm_max_tokens = llm_config['max_tokens']
             self.llm_timeout = llm_config['timeout']
-            self.openai_api_key = SecretStr(llm_config['api_key']) if llm_config['api_key'] else None
+            self.openai_api_key = llm_config['api_key']
+            self.anthropic_api_key = None  # Not used currently
             
             # Monitoring settings
             monitoring_config = config.get_monitoring_config()
@@ -98,15 +55,40 @@ class Settings(BaseSettings):
             self.github_user_name = github_config['user_name']
             self.github_user_email = github_config['user_email']
             
+            # AI Command Gateway settings
+            gateway_config = config.get_gateway_config()
+            self.ai_command_gateway_url = gateway_config['url']
+            self.ai_command_gateway_timeout = gateway_config['timeout']
+            self.ai_command_gateway_source_id = gateway_config['source_id']
+            
+            # AI Command Gateway Configuration (REQUIRED - no defaults)
+            self.ai_command_gateway_url = gateway_config['url']
+            self.ai_command_gateway_timeout = gateway_config['timeout']
+            self.ai_command_gateway_source_id = gateway_config['source_id']
+            
+            # Gateway Operation Defaults (REQUIRED - no code fallbacks)
+            self.gateway_default_timeout_seconds = gateway_config['default_timeout_seconds']
+            self.gateway_default_log_lines = gateway_config['default_log_lines']
+            self.gateway_default_restart_strategy = gateway_config['default_restart_strategy']
+            self.gateway_default_health_retries = gateway_config['default_health_retries']
+            self.gateway_default_priority = gateway_config['default_priority']
+            self.gateway_default_metrics = gateway_config['default_metrics']
+            self.gateway_default_health_endpoints = gateway_config['default_health_endpoints']
+            
         except Exception as e:
             # FAIL FAST - No fallbacks, no defaults
             raise RuntimeError(f"❌ CRITICAL: Cannot load configuration from .env file: {e}")
+
+    # Computed properties for parsed defaults
+    @property
+    def gateway_default_metrics_list(self) -> List[str]:
+        """Parse metrics string into list"""
+        return [metric.strip() for metric in self.gateway_default_metrics.split(',')]
     
-    class Config:
-        """Pydantic config."""
-        env_file = ".env"
-        case_sensitive = False
-        extra = "ignore"  # Allow extra fields from .env
+    @property  
+    def gateway_default_health_endpoints_list(self) -> List[str]:
+        """Parse health endpoints string into list"""
+        return [endpoint.strip() for endpoint in self.gateway_default_health_endpoints.split(',')]
 
 
 # Global settings instance

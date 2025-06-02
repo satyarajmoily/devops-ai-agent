@@ -1,43 +1,42 @@
-# Market Programmer Agent - Autonomous AI System for Continuous Improvement
+# DevOps AI Agent - Intelligent Infrastructure Management System
 
-## 🎯 Repository Responsibility
+## 🎯 Overview
 
-The **Market Programmer Agent** is the brain of our autonomous trading system. This LangChain-powered FastAPI service monitors the market-predictor, analyzes its performance, detects issues, and autonomously implements improvements through code generation, testing, and deployment via GitHub PRs.
+The **DevOps AI Agent** is an advanced AI-powered infrastructure management and automation system. Built with FastAPI and powered by sophisticated AI intelligence, it provides autonomous monitoring, diagnosis, and recovery capabilities for containerized environments.
 
-### Core Responsibilities:
-- **Intelligent Monitoring**: Continuously monitor market-predictor performance and health
-- **Issue Detection**: Analyze metrics and logs to identify problems and optimization opportunities
-- **Autonomous Diagnosis**: Use LLM-powered analysis to understand root causes
-- **Code Generation**: Create code fixes and improvements using LangChain
-- **Local Testing**: Validate fixes in sandbox environments before deployment
-- **GitHub Integration**: Create, manage, and merge pull requests autonomously
-- **Self-Correction**: Learn from deployment outcomes and adjust strategies
+### Core Purpose:
+- **Intelligent Monitoring**: AI-driven infrastructure health monitoring and analysis
+- **Autonomous Recovery**: Automated issue detection and resolution
+- **Event-Driven Operations**: Real-time response to infrastructure alerts
+- **Multi-Environment Support**: Universal operations across different infrastructure environments
+- **AI-Powered Diagnostics**: Advanced diagnostic planning and execution workflows
 
-### Event-Driven Architecture (Professional Implementation):
+### Key Capabilities:
 ```
-Market Predictor → Prometheus → Alert Rules → Alertmanager
-     /metrics        ↓              ↓              ↓
-                  Monitor      Evaluate      Send Webhooks
-                              Conditions          ↓
-Agent Webhooks ← HTTP POST ← Alert Manager ← Real Issues
-     ↓                                            ↓
-AI Analysis → Intelligent Response → Autonomous Actions
-     ↓                    ↓                      ↓
-Root Cause Analysis → Code Generation → Self-Correction Loop
+Alert Detection → AI Analysis → Diagnostic Planning → Automated Recovery
+      ↓              ↓                ↓                    ↓
+  Alertmanager  → LLM Reasoning → Multi-Phase Plans → Gateway Execution
+      ↓              ↓                ↓                    ↓
+Real-time Alerts → Root Cause → Smart Workflows → Infrastructure Actions
 ```
 
-The Agent operates as the **autonomous improvement system** - it's the orchestrator that ensures the market-predictor continuously evolves and improves without human intervention.
+The DevOps AI Agent serves as an **intelligent infrastructure orchestrator** that combines real-time monitoring with advanced AI reasoning to maintain system health autonomously.
 
 ---
 
 ## 🚀 Quick Start
 
-### Development Setup
+### Prerequisites
+- Python 3.8+
+- Docker and Docker Compose
+- OpenAI API Key (for AI capabilities)
+- Access to target infrastructure (containers, services)
+
+### Installation
 
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd market-programmer-agent
+# Clone and setup
+cd devops-ai-agent
 
 # Create virtual environment
 python -m venv venv
@@ -46,186 +45,272 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 
-# Copy environment template and configure
+# Configure environment
 cp .env.example .env
-# Edit .env with your API keys (OpenAI, GitHub, etc.)
-
-# Run development server
-python -m uvicorn src.agent.main:app --reload --host 0.0.0.0 --port 8001
-```
-
-### Docker Setup
-
-```bash
-# Build and run with Docker Compose
-cd docker
-docker-compose up --build
-
-# Or build manually
-docker build -f docker/Dockerfile -t market-programmer-agent .
-docker run -p 8001:8001 --env-file .env market-programmer-agent
+# Edit .env with your configuration
 ```
 
 ### Configuration
 
-Create a `.env` file with the following required settings:
+Create a `.env` file in the repository root:
 
 ```bash
-# LLM Configuration (Required for AI analysis)
-OPENAI_API_KEY=your_openai_api_key_here
+# Core Configuration
+ENVIRONMENT=development
+LOG_LEVEL=DEBUG
+SERVICE_NAME=devops-ai-agent
+SERVICE_VERSION=1.0.0
+API_PORT=8001
 
-# Target Service
+# AI Intelligence (Required)
+OPENAI_API_KEY=your_openai_api_key_here
+LLM_MODEL=gpt-4
+LLM_TEMPERATURE=0.1
+LLM_MAX_TOKENS=2000
+LLM_TIMEOUT=60
+
+# Operation Control
+SAFETY_MODE=true
+FALLBACK_ENABLED=true
+MONITORING_INTERVAL=30
+
+# Target Services
 MARKET_PREDICTOR_URL=http://localhost:8000
 
-# Optional: GitHub Integration
-GITHUB_TOKEN=your_github_token_here
-GITHUB_REPOSITORY=your_username/market-predictor
-
-# Agent Behavior
-SAFETY_MODE=true  # Set to false for autonomous operation
-MONITORING_INTERVAL=30
+# Infrastructure Access
+# Configure according to your infrastructure setup
 ```
 
-### API Endpoints
+### Running the Service
 
-Once running, the agent provides:
+```bash
+# Development mode
+python -m uvicorn src.agent.main:app --reload --host 0.0.0.0 --port 8001
+
+# Or using Docker
+docker-compose up --build
+```
+
+### Verification
+
+Once running, verify the service:
 
 - **API Documentation**: http://localhost:8001/docs
 - **Health Check**: http://localhost:8001/health
-- **Detailed Status**: http://localhost:8001/status
-- **Monitoring Status**: http://localhost:8001/monitoring/status
-- **⚡ Alert Webhooks**: http://localhost:8001/webhook/alerts (NEW!)
-- **Control Panel**: http://localhost:8001/control/*
+- **System Status**: http://localhost:8001/status
 
 ---
 
-## 📁 Project Structure
+## 📊 Architecture
 
+### Core Components
+
+```mermaid
+graph TB
+    subgraph "AI Intelligence Layer"
+        AI[AI Reasoning Engine]
+        DP[Diagnostic Planner]
+        CG[Command Generator]
+        PM[Pattern Matcher]
+        WE[Workflow Engine]
+    end
+    
+    subgraph "Infrastructure Interface"
+        UI[Universal Interface]
+        OR[Operation Registry]
+        GE[Gateway Executor]
+    end
+    
+    subgraph "Service Layer"
+        FA[FastAPI Application]
+        MO[Monitoring Orchestrator]
+        RS[Recovery Service]
+    end
+    
+    subgraph "External Systems"
+        AM[Alertmanager]
+        ACG[AI Command Gateway]
+        TS[Target Services]
+    end
+    
+    AM --> FA
+    FA --> MO
+    MO --> AI
+    AI --> DP
+    DP --> WE
+    WE --> UI
+    UI --> GE
+    GE --> ACG
+    ACG --> TS
 ```
-market-programmer-agent/
+
+### AI Intelligence Engine
+
+The system includes five AI intelligence components:
+
+1. **AI Reasoning Engine**: Core LLM-powered analysis and decision making
+2. **Diagnostic Planner**: Creates intelligent multi-phase diagnostic workflows
+3. **Command Generator**: Generates custom commands beyond predefined operations
+4. **Pattern Matcher**: Learns from past incidents and recognizes patterns
+5. **Workflow Engine**: Executes complex diagnostic workflows with adaptive logic
+
+### Universal Infrastructure Interface
+
+Environment-agnostic operations layer supporting:
+- **Operation Registry**: Centralized catalog of available infrastructure operations
+- **Gateway Executor**: AI Command Gateway integration for natural language operations
+- **Multi-Environment**: Supports different infrastructure environments
+- **Intelligent Routing**: AI-driven operation selection and execution
+
+---
+
+## 📡 API Endpoints
+
+### Health & Status
+- `GET /health` - Basic health check
+- `GET /status` - Detailed system status including AI components
+- `GET /monitoring/status` - Monitoring system status
+
+### Agent Control
+- `POST /control/start-monitoring` - Start continuous monitoring
+- `POST /control/stop-monitoring` - Stop monitoring
+- `POST /monitoring/cycle` - Trigger single monitoring cycle
+
+### Event Processing
+- `POST /webhook/alerts` - Receive Alertmanager webhooks (primary event trigger)
+
+### Debug & Diagnostics
+- `GET /debug/docker` - Docker connectivity diagnostics
+- `GET /orchestrator/status` - Recovery action history
+
+### Documentation
+- `GET /docs` - Interactive API documentation (Swagger UI)
+- `GET /redoc` - Alternative API documentation
+
+---
+
+## 🤖 AI Intelligence Features
+
+### Advanced AI Reasoning
+- **LLM-Powered Analysis**: Uses GPT-4 for intelligent issue analysis
+- **Context-Aware Decisions**: Considers full system context for decisions
+- **Root Cause Analysis**: Deep investigation beyond surface symptoms
+- **Risk Assessment**: Evaluates risks before taking actions
+- **Confidence Scoring**: Provides confidence levels for autonomous actions
+
+### Diagnostic Planning
+- **Multi-Phase Workflows**: Complex diagnostic plans with intelligent step chaining
+- **Adaptive Execution**: Dynamic workflow adjustment based on results
+- **Success Criteria**: Clear validation for each diagnostic step
+- **Escalation Logic**: Automatic escalation when AI confidence is low
+
+### Pattern Recognition
+- **Incident Learning**: Learns from past incidents and outcomes
+- **Pattern Matching**: Recognizes similar issues for faster resolution
+- **Historical Context**: Uses past data to inform current decisions
+- **Continuous Improvement**: Evolves capabilities based on experience
+
+---
+
+## 🔧 Core Operations
+
+### Infrastructure Operations
+The system supports the following core operations through the Universal Interface:
+
+1. **Service Management**
+   - `restart_service` - Intelligent service restart with validation
+   - `scale_service` - Service scaling operations
+   - `health_check` - Comprehensive health verification
+
+2. **Monitoring & Diagnostics**
+   - `get_logs` - Intelligent log retrieval and analysis
+   - `check_resources` - Resource monitoring and analysis
+   - `execute_command` - Custom command execution with context
+
+3. **AI-Enhanced Operations**
+   - Context-enriched operation execution
+   - Natural language operation descriptions
+   - Intelligent parameter selection
+   - Results analysis and validation
+
+### Operation Flow
+```
+Alert Received → AI Analysis → Diagnostic Plan → Operation Execution → Validation → Learning
+```
+
+---
+
+## 🛡️ Safety & Security
+
+### Built-in Safety Controls
+- **Safety Mode**: Human approval required for all automated actions
+- **Confidence Thresholds**: Actions only taken when AI confidence is sufficient
+- **Escalation Protocols**: Automatic human escalation for complex issues
+- **Operation Validation**: All actions validated before and after execution
+- **Rollback Capabilities**: Ability to undo actions when possible
+
+### Security Features
+- **API Key Management**: Secure handling of external API credentials
+- **Input Validation**: Comprehensive validation of all inputs and parameters
+- **Audit Trail**: Complete logging of all agent activities and decisions
+- **Error Handling**: Graceful handling of failures with secure error messages
+- **Rate Limiting**: Protection against API abuse and excessive operations
+
+### Fail-Safe Mechanisms
+- **AI Fallback**: Rule-based fallback when AI systems fail
+- **Circuit Breaker**: Protection against repeated failures
+- **Timeout Controls**: Prevents operations from running indefinitely
+- **Resource Limits**: Prevents resource exhaustion
+
+---
+
+## 🔌 Integration
+
+### Alertmanager Integration
+- **Webhook Reception**: Receives real-time alerts from Prometheus Alertmanager
+- **Alert Processing**: Intelligent parsing and analysis of alert metadata
+- **Severity Routing**: Different response strategies based on alert severity
+- **Alert Correlation**: Links related alerts for comprehensive analysis
+
+### AI Command Gateway
+- **Natural Language Operations**: Expresses infrastructure operations as human-readable intents
+- **AI-to-AI Communication**: Intelligent communication between AI services
+- **Enhanced Context**: Rich operational context for better AI decision making
+- **Unified Interface**: Single interface for multiple infrastructure environments
+
+### Target Service Monitoring
+- **Health Monitoring**: Continuous monitoring of target service health
+- **Performance Tracking**: Response time and availability monitoring
+- **Error Detection**: Intelligent detection of service issues
+- **Recovery Validation**: Verification that recovery actions were successful
+
+---
+
+## 🏗️ Development
+
+### Project Structure
+```
+devops-ai-agent/
 ├── src/
 │   └── agent/
-│       ├── __init__.py
-│       ├── main.py                  # FastAPI app entry point
-│       ├── core/
-│       │   └── monitoring.py        # Monitoring orchestration
-│       ├── agents/
-│       │   └── analyzer.py          # LangChain analysis agent
-│       ├── services/
-│       │   └── predictor_client.py  # Market predictor HTTP client
-│       ├── models/
-│       │   └── health.py           # Health and status models
-│       └── config/
-│           └── settings.py         # Configuration management
-├── tests/                          # Test suite
-├── docker/
-│   ├── Dockerfile                 # Production container
-│   └── docker-compose.yml         # Development environment
-├── requirements.txt               # Production dependencies
-├── requirements-dev.txt           # Development dependencies
-├── .env.example                  # Environment template
-└── memory-bank/                  # Project documentation
+│       ├── main.py                    # FastAPI application
+│       ├── core/                      # Core system components
+│       │   ├── ai_reasoning.py        # AI analysis engine
+│       │   ├── ai_executor.py         # AI action execution
+│       │   ├── universal_interface.py # Infrastructure operations
+│       │   ├── monitoring.py          # Monitoring orchestration
+│       │   └── ai_intelligence/       # AI intelligence components
+│       ├── agents/                    # LangChain analysis agents
+│       ├── services/                  # External service clients
+│       ├── models/                    # Data models and schemas
+│       ├── config/                    # Configuration management
+│       └── api/                       # API endpoints
+├── tests/                             # Test suite
+├── requirements.txt                   # Dependencies
+└── .env.example                      # Environment template
 ```
 
----
-
-## 🤖 Agent Capabilities
-
-### Current Features (Phase 1.3 Complete ✅) INFRASTRUCTURE MONITORING & RECOVERY
-
-#### ✅ Professional Infrastructure Monitoring & Recovery ⚡ MAJOR NEW CAPABILITIES!
-- **Complete Monitoring Stack**: Prometheus, Alertmanager, Grafana, Loki, Promtail
-- **Automated Recovery**: Docker container restart capabilities with validation
-- **Multi-Step Recovery Workflows**: Intelligent recovery strategies by alert type
-- **Error Pattern Recognition**: AI-powered log analysis with pattern matching
-- **Event-Driven Architecture**: Real-time alert processing and automated response
-- **Professional Docker Integration**: Container management via Docker API
-- **Safety Mechanisms**: Comprehensive timeout handling and escalation paths
-
-#### ✅ Enhanced Event-Driven Monitoring ⚡ UPGRADED!
-- **Alertmanager Webhooks**: Receives and processes real alerts from infrastructure
-- **Recovery Integration**: Automatic recovery workflows triggered by alerts
-- **Validation System**: Post-recovery health verification and metrics
-- **Intelligent Routing**: Severity-based alert processing and escalation
-- **Industry Standard**: Professional monitoring approach used by major tech companies
-
-#### ✅ Basic Monitoring & Communication (Enhanced)
-- **Service Health Monitoring**: Professional monitoring via Prometheus metrics
-- **HTTP Client**: Robust client for communicating with Market Predictor APIs
-- **Connectivity Checks**: Automatic detection via real alerts
-- **Response Time Tracking**: Prometheus-based performance monitoring
-
-#### ✅ LangChain AI Analysis (Enhanced)
-- **Alert-Driven Analysis**: LLM-powered analysis triggered by real alerts
-- **Rich Context Processing**: AI receives alert metadata, severity, descriptions
-- **Root Cause Analysis**: AI-driven investigation with alert context
-- **Confidence Scoring**: Reliability assessment for autonomous actions
-- **Fallback Analysis**: Rule-based analysis when LLM is unavailable
-
-#### ✅ Agent Orchestration (Event-Driven)
-- **Alert-Driven Mode**: Agent waits for real alerts instead of continuous polling
-- **Action Tracking**: Complete audit trail of agent activities
-- **Safety Controls**: Built-in safety mode for human oversight
-- **Status Reporting**: Comprehensive status and health reporting
-
-#### ✅ FastAPI Web Interface (Enhanced)
-- **RESTful APIs**: Full REST API for agent control and monitoring
-- **Webhook Endpoints**: `/webhook/alerts` for Alertmanager integration
-- **Status Dashboard**: Real-time agent and target service status
-- **Health Endpoints**: Integration-ready health checks
-
-### 🔜 Next Phase Features (Phase 1.4)
-
-- **Comprehensive Testing**: Unit, integration, and end-to-end testing
-- **Recovery System Testing**: Simulated failures and edge case validation
-- **Performance Testing**: Load and stress testing of recovery capabilities
-- **Environment Setup**: Virtual environment configuration and dependency management
-
----
-
-## 🎮 Agent Control
-
-### Manual Operation (Safety Mode)
-
-When `SAFETY_MODE=true`, the agent requires manual triggers:
-
-```bash
-# Start monitoring
-curl -X POST http://localhost:8001/control/start-monitoring
-
-# Trigger single monitoring cycle
-curl -X POST http://localhost:8001/monitoring/cycle
-
-# Stop monitoring
-curl -X POST http://localhost:8001/control/stop-monitoring
-
-# Check monitoring status
-curl http://localhost:8001/monitoring/status
-```
-
-### Event-Driven Operation ⚡ NEW ARCHITECTURE!
-
-The agent now operates using professional event-driven architecture:
-
-- **Alert Reception**: Receives webhooks from Alertmanager when real issues occur
-- **Intelligent Analysis**: AI analyzes alert context (severity, description, labels)
-- **Action Execution**: Autonomous response to actual infrastructure problems
-- **No Polling**: No wasteful continuous checking - responds only to real alerts
-- **Professional Standard**: Industry-standard approach used by major tech companies
-
-### Autonomous Operation
-
-When `SAFETY_MODE=false`, the agent operates autonomously:
-
-- **Event-Driven**: Responds to real alerts from monitoring infrastructure
-- **Issue Detection**: AI-powered analysis of alert context and metadata
-- **Action Execution**: Autonomous response to detected issues
-- **Self-Correction**: Learning from outcomes to improve future responses
-
----
-
-## 🧪 Testing
-
+### Testing
 ```bash
 # Install development dependencies
 pip install -r requirements-dev.txt
@@ -233,137 +318,46 @@ pip install -r requirements-dev.txt
 # Run tests
 pytest tests/ -v
 
-# Run tests with coverage
+# Run with coverage
 pytest tests/ --cov=src/agent --cov-report=html
 
-# Run linting
+# Code quality
 flake8 src/ tests/
 black src/ tests/
 mypy src/
 ```
 
----
-
-## 📊 Current Status: Phase 1.1 Complete ✅
-
-### ✅ Completed Features:
-- **Agent Infrastructure**: Complete LangChain-powered agent framework
-- **Market Predictor Integration**: HTTP client with health monitoring
-- **AI Analysis Engine**: GPT-4 powered intelligent issue analysis
-- **Monitoring Orchestration**: Configurable monitoring loops with action tracking
-- **FastAPI Interface**: Full REST API with manual controls
-- **Safety Controls**: Built-in safety mode for controlled operation
-
-### 🔄 Next Steps (Phase 1.2):
-- Implement Prometheus client for metrics analysis
-- Add Alertmanager webhook integration
-- Create basic restart and recovery actions
-- Enhance analysis with multi-source data correlation
-
----
-
-## 🚦 Integration Points
-
-### Market Predictor Integration
-- **Health Monitoring**: Continuous monitoring of `/health` and `/status` endpoints
-- **Response Time Tracking**: Monitoring API response times and availability
-- **Issue Detection**: AI-powered analysis of service problems
-- **Recovery Actions**: Automated response to detected issues
-
-### Future Integrations (Later Phases)
-- **Prometheus**: Direct metrics querying and alerting
-- **Loki**: Log analysis and correlation
-- **GitHub**: Automated PR creation and management
-- **CI/CD**: Integration with deployment pipelines
-
----
-
-## ⚙️ Configuration
-
-The agent uses Pydantic Settings for configuration management:
-
-```python
-# Core settings
-ENVIRONMENT=development
-LOG_LEVEL=DEBUG
-DEBUG=true
-
-# API configuration  
-API_HOST=0.0.0.0
-API_PORT=8001
-
-# LLM configuration (required for AI features)
-OPENAI_API_KEY=your_key_here
-LLM_MODEL=gpt-4
-LLM_TEMPERATURE=0.1
-
-# Target service
-MARKET_PREDICTOR_URL=http://localhost:8000
-
-# Agent behavior
-MONITORING_INTERVAL=30
-SAFETY_MODE=true
-LEARNING_ENABLED=true
-```
-
----
-
-## 📈 Development Roadmap
-
-### Milestone 1: Foundation (Current) ✅
-- **Phase 1.1**: ✅ Agent Infrastructure & Basic Communication
-- **Phase 1.2**: 🔄 Prometheus Integration & Alert Webhooks
-- **Phase 1.3**: ⏳ Enhanced Analysis & Basic Actions
-- **Phase 1.4**: ⏳ Testing & Validation Framework
-
-### Future Milestones
-- **Milestone 2**: Alert System Integration (Prometheus/Loki)
-- **Milestone 3**: Intelligence Layer (Advanced LangChain integration)
-- **Milestone 4**: Code Generation & GitHub Integration
-- **Milestone 5**: Advanced Feedback Loop & Self-Correction
-- **Milestone 6**: Production Hardening & Enterprise Features
-
----
-
-## 🛡️ Safety & Security
-
-### Built-in Safety Controls
-- **Safety Mode**: Human approval required for all actions
-- **Action Validation**: All actions logged and validated
-- **Circuit Breaker**: Protection against repeated failures
-- **Audit Trail**: Complete logging of all agent activities
-
-### Security Features
-- **API Key Management**: Secure handling of external API keys
-- **Input Validation**: Comprehensive validation of all inputs
-- **Error Handling**: Graceful handling of failures and exceptions
-- **Rate Limiting**: Protection against API abuse
+### Configuration Management
+The system uses environment-based configuration with strict validation:
+- **No Default Values**: All required settings must be explicitly configured
+- **Fail-Fast**: System fails immediately if required configuration is missing
+- **Type Validation**: Automatic validation of configuration types and values
+- **Security**: Sensitive values (API keys) are handled securely
 
 ---
 
 ## 🤝 Contributing
 
-This agent represents cutting-edge autonomous software development:
-
-1. **Fork** the repository
-2. **Create** a feature branch for agent improvements
-3. **Implement** changes with comprehensive testing
-4. **Document** any new autonomous capabilities
-5. **Submit** PR with detailed impact analysis
-
 ### Development Guidelines
-- Maintain **high test coverage** for all autonomous operations
-- Include **safety checks** for all automated actions
-- Add **comprehensive logging** for audit trails
-- Follow **security best practices** for API integrations
-- Document **failure modes** and recovery procedures
+1. **Maintain AI Intelligence**: Ensure all automated operations maintain AI-driven decision making
+2. **Safety First**: Include appropriate safety checks for all new automated capabilities
+3. **Comprehensive Testing**: Add tests for all new AI intelligence features
+4. **Documentation**: Update documentation for any new AI capabilities or operations
+5. **Security**: Follow security best practices for API integrations and data handling
+
+### Code Standards
+- Follow Python PEP 8 style guidelines
+- Use type hints for all functions and methods
+- Include comprehensive docstrings for AI intelligence components
+- Add logging for all AI decisions and infrastructure operations
+- Implement proper error handling and escalation
 
 ---
 
 ## 📝 License
 
-MIT License - This project is part of the Autonomous Trading Builder system.
+MIT License - Part of the Autonomous Trading Builder system.
 
 ---
 
-*🤖 This agent represents the cutting edge of autonomous software development - a system that can monitor, diagnose, fix, and improve itself with minimal human intervention. It's the beginning of truly self-evolving software systems.*
+*🤖 The DevOps AI Agent represents advanced autonomous infrastructure management - an intelligent system that can monitor, diagnose, and recover from infrastructure issues with minimal human intervention. It combines cutting-edge AI reasoning with practical DevOps operations to create truly self-managing infrastructure.*

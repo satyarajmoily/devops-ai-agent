@@ -60,7 +60,7 @@ class AnalysisAgent:
             model=self.settings.llm_model,
             temperature=self.settings.llm_temperature,
             max_tokens=self.settings.llm_max_tokens,
-            api_key=self.settings.openai_api_key.get_secret_value(),
+            api_key=self.settings.openai_api_key,
             timeout=self.settings.llm_timeout
         )
     

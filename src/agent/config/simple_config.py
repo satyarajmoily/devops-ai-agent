@@ -19,16 +19,24 @@ class StrictConfig:
             env_file: Path to .env file (defaults to .env in project root)
         """
         if env_file is None:
-            # Look for .env file in devops-ai-agent root directory
-            # Path: devops-ai-agent/src/agent/config/simple_config.py -> devops-ai-agent/.env
-            agent_root = Path(__file__).parent.parent.parent
-            env_file = agent_root / ".env"
+            # Look for .env file in project root directory
+            # Inside container: /app/src/agent/config/simple_config.py -> /app/.env
+            current_file = Path(__file__)
+            if str(current_file).startswith('/app/src'):
+                # Running in container - .env is at /app/.env
+                env_file = Path('/app/.env')
+            else:
+                # Running locally - go up 3 levels to devops-ai-agent root
+                agent_root = current_file.parent.parent.parent
+                env_file = agent_root / ".env"
         
-        if not env_file.exists():
+        # Only load .env file if it exists (for testing, env vars may be set directly)
+        if env_file.exists():
+            # Load environment variables from .env file
+            load_dotenv(env_file)
+        elif env_file is not None and not os.getenv('AGENT_NAME'):
+            # Only fail if we're looking for a specific .env file and no env vars are set
             raise FileNotFoundError(f"❌ CRITICAL: .env file not found at {env_file}")
-        
-        # Load environment variables from .env file
-        load_dotenv(env_file)
         
         self._config = {}
         self._load_config()
@@ -38,6 +46,25 @@ class StrictConfig:
         value = os.getenv(var_name)
         if value is None or value == "":
             raise ValueError(f"❌ REQUIRED: {var_name} must be set in .env file")
+        
+        # Type conversion
+        try:
+            if var_type == "int":
+                return int(value)
+            elif var_type == "float":
+                return float(value)
+            elif var_type == "bool":
+                return value.lower() in ('true', '1', 'yes', 'on')
+            else:
+                return value
+        except ValueError as e:
+            raise ValueError(f"❌ INVALID: {var_name} must be a valid {var_type}, got: {value}")
+    
+    def _get_env_var(self, var_name: str, var_type: str = "string", default: Any = None) -> Any:
+        """Get optional environment variable with default value"""
+        value = os.getenv(var_name)
+        if value is None or value == "":
+            return default
         
         # Type conversion
         try:
@@ -105,6 +132,21 @@ class StrictConfig:
             'test_timeout': self._require_env_var('TEST_TIMEOUT', 'int')
         }
         
+        # AI Command Gateway Configuration - ALL REQUIRED
+        self._config['gateway'] = {
+            'url': self._require_env_var('AI_COMMAND_GATEWAY_URL'),
+            'timeout': self._require_env_var('AI_COMMAND_GATEWAY_TIMEOUT', 'int'),
+            'source_id': self._require_env_var('AI_COMMAND_GATEWAY_SOURCE_ID'),
+            # Gateway Operation Defaults - ALL REQUIRED (no code fallbacks)
+            'default_timeout_seconds': self._require_env_var('GATEWAY_DEFAULT_TIMEOUT_SECONDS', 'int'),
+            'default_log_lines': self._require_env_var('GATEWAY_DEFAULT_LOG_LINES', 'int'),
+            'default_restart_strategy': self._require_env_var('GATEWAY_DEFAULT_RESTART_STRATEGY'),
+            'default_health_retries': self._require_env_var('GATEWAY_DEFAULT_HEALTH_RETRIES', 'int'),
+            'default_priority': self._require_env_var('GATEWAY_DEFAULT_PRIORITY'),
+            'default_metrics': self._require_env_var('GATEWAY_DEFAULT_METRICS'),
+            'default_health_endpoints': self._require_env_var('GATEWAY_DEFAULT_HEALTH_ENDPOINTS')
+        }
+        
         # Development Settings - ALL REQUIRED
         self._config['development'] = {
             'enable_testing': self._require_env_var('ENABLE_TESTING', 'bool'),
@@ -149,6 +191,10 @@ class StrictConfig:
     def get_service_config(self) -> Dict[str, Any]:
         """Get service configuration"""
         return self._config.get('service', {})
+    
+    def get_gateway_config(self) -> Dict[str, Any]:
+        """Get AI Command Gateway configuration"""
+        return self._config.get('gateway', {})
     
     def get_development_config(self) -> Dict[str, Any]:
         """Get development configuration"""

@@ -18,9 +18,6 @@ openai>=1.0.0
 # GitHub integration (for future phases)
 PyGithub>=1.59.0
 
-# Docker API integration
-docker>=7.0.0
-
 # Configuration and file handling
 PyYAML>=6.0.0
 

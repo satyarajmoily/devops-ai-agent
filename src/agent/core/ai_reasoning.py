@@ -198,7 +198,7 @@ RESPONSE FORMAT: Provide your response as a JSON object with this structure:
     "action_plan": [
         {{
             "action_type": "specific_action_name",
-            "target": "what_to_act_on",
+            "target": "single_service_name_only",
             "command": "exact_command_if_applicable", 
             "reason": "why_this_action",
             "expected_outcome": "what_should_happen",
@@ -212,6 +212,12 @@ RESPONSE FORMAT: Provide your response as a JSON object with this structure:
     "fallback_options": ["alternative_approaches"],
     "escalation_criteria": ["when_to_call_human"]
 }}
+
+IMPORTANT RULES:
+- "target" must be a SINGLE service name (string), never a list
+- If multiple services need action, create separate actions for each
+- Use exact service names: "market-predictor", "devops-ai-agent", "ai-command-gateway"
+- Only include actions that directly resolve the incident
 
 Think step by step. Be thorough but practical. Focus on getting the service back online safely.
 """
@@ -312,15 +318,26 @@ Think step by step. Be thorough but practical. Focus on getting the service back
             # Convert action plan to AIAction objects
             action_plan = []
             for action_data in ai_data.get("action_plan", []):
+                # Handle success_criteria - ensure it's a list
+                success_criteria = action_data.get("success_criteria", [])
+                if isinstance(success_criteria, str):
+                    success_criteria = [success_criteria]
+                
+                # Handle target - ensure it's a string (convert list to first item)
+                target = action_data.get("target", "unknown")
+                if isinstance(target, list):
+                    target = target[0] if target else "unknown"
+                    self.logger.warning(f"AI returned list target, using first item: {target}")
+                
                 action = AIAction(
                     action_type=action_data.get("action_type", "unknown"),
-                    target=action_data.get("target", "unknown"),
+                    target=str(target),  # Ensure it's a string
                     command=action_data.get("command"),
                     reason=action_data.get("reason", "No reason provided"),
                     expected_outcome=action_data.get("expected_outcome", "Unknown outcome"),
                     risk_level=action_data.get("risk_level", "Medium"),
                     timeout_seconds=action_data.get("timeout_seconds", 60),
-                    success_criteria=action_data.get("success_criteria", [])
+                    success_criteria=success_criteria
                 )
                 action_plan.append(action)
             
@@ -339,7 +356,70 @@ Think step by step. Be thorough but practical. Focus on getting the service back
             
         except (json.JSONDecodeError, KeyError, ValueError) as e:
             self.logger.error(f"Failed to parse AI response: {e}")
-            self.logger.debug(f"AI response was: {ai_response}")
+            print(f"❌ JSON PARSE ERROR: {e}")
+            print(f"🔍 RAW AI RESPONSE (first 500 chars): {ai_response[:500]}...")
+            print(f"🔍 CLEANED AI RESPONSE (first 500 chars): {ai_response_clean[:500]}...")
+            
+            # Try to find JSON in different ways
+            if "{" in ai_response and "}" in ai_response:
+                try:
+                    # Extract first complete JSON object
+                    start = ai_response.find("{")
+                    brace_count = 0
+                    end = start
+                    for i, char in enumerate(ai_response[start:], start):
+                        if char == "{":
+                            brace_count += 1
+                        elif char == "}":
+                            brace_count -= 1
+                            if brace_count == 0:
+                                end = i + 1
+                                break
+                    
+                    if end > start:
+                        json_str = ai_response[start:end]
+                        self.logger.error(f"Attempting to parse extracted JSON: {json_str[:500]}...")
+                        ai_data = json.loads(json_str)
+                        
+                        # Create a simplified action plan
+                        action_plan = []
+                        if "action_plan" in ai_data:
+                            for action_data in ai_data["action_plan"]:
+                                success_criteria = action_data.get("success_criteria", [])
+                                if isinstance(success_criteria, str):
+                                    success_criteria = [success_criteria]
+                                
+                                # Handle target - ensure it's a string (convert list to first item)
+                                target = action_data.get("target", "unknown")
+                                if isinstance(target, list):
+                                    target = target[0] if target else "unknown"
+                                    self.logger.warning(f"AI returned list target, using first item: {target}")
+                                
+                                action = AIAction(
+                                    action_type=action_data.get("action_type", "restart_service"),
+                                    target=str(target),  # Ensure it's a string
+                                    command=action_data.get("command"),
+                                    reason=action_data.get("reason", "Service recovery"),
+                                    expected_outcome=action_data.get("expected_outcome", "Service restored"),
+                                    risk_level=action_data.get("risk_level", "Medium"),
+                                    timeout_seconds=action_data.get("timeout_seconds", 60),
+                                    success_criteria=success_criteria
+                                )
+                                action_plan.append(action)
+                        
+                        return AIDecision(
+                            analysis=ai_data.get("analysis", "Service appears to be down"),
+                            root_cause=ai_data.get("root_cause", "Service failure"),
+                            decision=ai_data.get("decision", "Restart service"),
+                            action_plan=action_plan,
+                            risk_assessment=ai_data.get("risk_assessment", "Medium risk"),
+                            confidence=float(ai_data.get("confidence", 0.7)),
+                            fallback_options=ai_data.get("fallback_options", ["Manual restart"]),
+                            escalation_criteria=ai_data.get("escalation_criteria", ["Multiple restart failures"])
+                        )
+                
+                except Exception as e2:
+                    self.logger.error(f"Secondary JSON parsing also failed: {e2}")
             
             # Create fallback decision from raw AI response
             return AIDecision(
